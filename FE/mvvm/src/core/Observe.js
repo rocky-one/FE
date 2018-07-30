@@ -1,34 +1,57 @@
-import {isObject} from './utils';
+import { isObject } from './utils';
+// class Dep {
+//     constructor(option){
+//         this.subs = [];
+//     }
+//     addSub(sub){
+//         this.subs.push(sub)
+//     }
+//     notify(){
+//         this.subs.forEach(sub=>{
+//             sub.update()
+//         })
+//     }
+// }
+// class Watcher{
+//     constructor(fn){
+//         this.fn=fn;
+//     }
+//     update(){
+//         this.fn();
+//     }
+// }
 class Observe {
-    constructor(data){
+    constructor(data) {
         // super();
+        console.log(data,'data')
         this.initObserve(data);
     }
-    initObserve(data){
-        Object.keys(data).forEach(key=>{
+    initObserve(data) {
+        Object.keys(data).forEach(key => {
             let value = data[key];
             let child = null;
-            if(isObject(value)){
-                observes(value);
+            if (isObject(value)) {
+                new Observe(value);
             }
-            Object.defineProperty(data,key,{
+            Object.defineProperty(data, key, {
                 enumerable: true,
-                get(){
+                get() {
                     return value;
                 },
-                set(newValue){
-                    if(newValue === value) return;
+                set(newValue) {
+                    if (newValue === value) return;
                     value = newValue;
-                    if(isObject(newValue)){
-                        child = observes(newValue);
+                    if (isObject(newValue)) {
+                        child = new Observe(value);
                     }
                 }
-            })
+            });
         })
     }
-    
+
 }
 export const observes = (data) => {
+    if(typeof data !=='object') return
     return new Observe(data)
 }
-export default observes;
+export default Observe;
