@@ -112,7 +112,6 @@ class Observe {
         });
         data.__proto__ = arrayPrototype;
     }
-
 }
 export const observes = (data) => {
     if (typeof data !== 'object') return
