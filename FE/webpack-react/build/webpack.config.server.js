@@ -5,6 +5,7 @@ const webpack = require('webpack');
 const ExtractTextWebpackPlugin = require('extract-text-webpack-plugin');
 const PurifyCSSPlugin = require('purifycss-webpack');
 const glob = require('glob');
+// rimraf 移除文件包
 const LessExtract = new ExtractTextWebpackPlugin({
     filename: 'style/less.css',
     disable: true, // 禁用 开发环境
@@ -15,21 +16,24 @@ const CssExtract = new ExtractTextWebpackPlugin({
 })
 module.exports = {
     entry: {
-        index: './src/index.js'
+        serverEntry: path.resolve(__dirname, '../src/serverEntry.js'),
     },
     output: {
-        filename: '[name].[hash:8].js',
-        path: path.resolve('./dist'),
+        filename: '[name].js', //.[hash:8]
+        path: path.resolve(__dirname, '../dist'),
+        publicPath:'',
+        libraryTarget: 'commonjs2', 
     },
-    devServer: {
-        contentBase: './dist',
-        port: 8088,
-        compress: true, // 服务器压缩
-        open: true,
-        hot: true,
+    // devServer: {
+    //     contentBase: path.join(__dirname, '../dist'),
+    //     port: 8088,
+    //     compress: true, // 服务器压缩
+    //     open: true,
+    //     hot: true,
+    // },
+    resolve: {
+        extensions: ['.js', '.jsx', '.less'],
     },
-    module: {},
-
     mode: 'development',
     resolve: {},
     module: {
@@ -61,29 +65,21 @@ module.exports = {
                         }
                     ]
                 })
+            },
+            {
+                test: /\.(js|jsx)$/,
+                use: [
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            presets:['@babel/preset-env','@babel/preset-react'],
+                        } 
+                    }
+                ]
             }
         ]
     },
     plugins: [
-        LessExtract,
-        CssExtract,
-        // new ExtractTextWebpackPlugin({
-        //     filename: 'css/index.css',
-        //     disable: true,
-        // }),
-        new webpack.HotModuleReplacementPlugin(),
-        new CleanWebpackPlugin([
-            './dist'
-        ]),
-        new HtmlWebpackPlugin({
-            filename: 'index.html',
-            template: './src/index.html',
-            title: '哈哈',
-            hash: true,
-            chunks: ['index'],
-        }),
-        new PurifyCSSPlugin({
-            paths: glob.sync(path.join(__dirname, 'src/*.html')),
-        })
+       
     ],
 }
