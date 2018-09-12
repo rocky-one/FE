@@ -5,6 +5,7 @@ const webpack = require('webpack');
 const ExtractTextWebpackPlugin = require('extract-text-webpack-plugin');
 const PurifyCSSPlugin = require('purifycss-webpack');
 const glob = require('glob');
+const dev = process.env.NODE_ENV==='development';
 const LessExtract = new ExtractTextWebpackPlugin({
     filename: 'style/less.css',
     disable: true, // 禁用 开发环境
@@ -13,20 +14,14 @@ const CssExtract = new ExtractTextWebpackPlugin({
     filename: 'style/css.css',
     disable: true, // 禁用 开发环境
 })
-module.exports = {
+const config = {
     entry: {
         clientEntry: path.resolve(__dirname, '../src/clientEntry.js'),
     },
     output: {
         filename: '[name].[hash:8].js',
         path: path.resolve(__dirname, '../dist'),
-    },
-    devServer: {
-        contentBase: path.join(__dirname, '../dist'),
-        port: 8088,
-        compress: true, // 服务器压缩
-        open: true,
-        hot: true,
+        publicPath: '/public'
     },
     resolve: {
         extensions: ['.js', '.jsx', '.less'],
@@ -98,3 +93,21 @@ module.exports = {
         }),
     ],
 }
+console.log(dev,'dev')
+if(dev){
+    config.devServer={
+        contentBase: path.join(__dirname, '../dist'),
+        port: 8089,
+        compress: true, // 服务器压缩
+        open: true,
+        hot: true,
+        overlay:{
+            errors: true,
+        },
+        publicPath:'./public',
+        historyApiFallback: {
+            index: './public/index.html'
+        }
+    }
+}
+module.exports = config;

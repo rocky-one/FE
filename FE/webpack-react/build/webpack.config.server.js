@@ -21,7 +21,7 @@ module.exports = {
     output: {
         filename: '[name].js', //.[hash:8]
         path: path.resolve(__dirname, '../dist'),
-        publicPath:'',
+        publicPath:'/public',
         libraryTarget: 'commonjs2', 
     },
     // devServer: {
