@@ -93,7 +93,6 @@ const config = {
         }),
     ],
 }
-console.log(dev,'dev')
 if(dev){
     config.devServer={
         contentBase: path.join(__dirname, '../dist'),
