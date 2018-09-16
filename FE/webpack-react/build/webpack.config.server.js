@@ -13,13 +13,29 @@ module.exports = {
     },
     mode: 'development',
     output: {
-        filename: 'serverEntry.js', 
+        filename: 'serverEntry.js',
         path: path.resolve(__dirname, '../dist'),
-        publicPath:'',
-        libraryTarget: 'commonjs2', 
+        publicPath:'http://localhost:8089/public',
+        libraryTarget: 'commonjs2',
+    },
+    resolve: {
+        extensions: ['.js', '.jsx', '.less'],
     },
     module: {
         rules: [
+            {
+                enforce: 'pre',
+                test: /\.(js|jsx)$/,
+                exclude:[
+                    path.resolve(__dirname,'../node_modules')
+                ],
+                use: [
+                    {
+                        loader: 'eslint-loader',
+
+                    }
+                ]
+            },
             {
                 test: /\.(js|jsx)$/,
                 use: [
@@ -27,13 +43,13 @@ module.exports = {
                         loader: 'babel-loader',
                         options: {
                             presets:['@babel/preset-env','@babel/preset-react'],
-                        } 
+                        }
                     }
                 ]
             }
         ]
     },
     plugins: [
-       
+
     ],
 }

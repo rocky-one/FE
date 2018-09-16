@@ -4,7 +4,7 @@ const webpack = require('webpack');
 const MemoryFs = require('memory-fs');
 const ReactDomServer = require('react-dom/server');
 const serverConfig = require('../../build/webpack.config.server');
-
+const proxy = require('http-proxy-middleware');
 const Module = module.constructor;
 const memory = new MemoryFs();
 const serverCompoler = webpack(serverConfig);
@@ -33,11 +33,14 @@ const getTemplate = () => {
 }
 
 module.exports = function (app) {
+
+    app.use('/public',proxy({
+        target: 'http://localhost:8089'
+    }))
     app.get('*', function (req, res) {
         getTemplate().then(template => {
             const content = ReactDomServer.renderToString(serverBundle);
-            console.log(content,'content')
-            res.send(template.replace('<!-- app -->'), content);
+            res.status(200).send(template.replace('<!-- app -->', content));
         })
     })
 }

@@ -16,7 +16,7 @@ const CssExtract = new ExtractTextWebpackPlugin({
 })
 const config = {
     entry: {
-        clientEntry: path.resolve(__dirname, '../src/clientEntry.js'),
+        clientEntry: path.resolve(__dirname, '../src/clientEntry.jsx'),
     },
     output: {
         filename: '[name].[hash:8].js',
@@ -59,13 +59,26 @@ const config = {
                 })
             },
             {
+                enforce: 'pre',
+                test: /\.(js|jsx)$/,
+                exclude:[
+                    path.resolve(__dirname,'../node_modules')
+                ],
+                use: [
+                    {
+                        loader: 'eslint-loader',
+
+                    }
+                ]
+            },
+            {
                 test: /\.(js|jsx)$/,
                 use: [
                     {
                         loader: 'babel-loader',
                         options: {
                             presets:['@babel/preset-env','@babel/preset-react'],
-                        } 
+                        }
                     }
                 ]
             }
@@ -86,7 +99,7 @@ const config = {
         new HtmlWebpackPlugin({
             filename: 'index.html',
             template: path.join(__dirname, '../src/index.html'),
-            title: '哈哈',
+            // title: '哈哈',
             // hash: true,
             // chunks: ['index'],
             // inject: true
