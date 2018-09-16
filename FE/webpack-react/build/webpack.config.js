@@ -27,7 +27,6 @@ const config = {
         extensions: ['.js', '.jsx', '.less'],
     },
     mode: 'development',
-    resolve: {},
     module: {
         rules: [
             {

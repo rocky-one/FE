@@ -9,7 +9,7 @@ const glob = require('glob');
 module.exports = {
     target: 'node',
     entry: {
-        serverEntry: path.resolve(__dirname, '../src/serverEntry.js'),
+        serverEntry: path.resolve(__dirname, '../src/serverEntry.jsx'),
     },
     mode: 'development',
     output: {
