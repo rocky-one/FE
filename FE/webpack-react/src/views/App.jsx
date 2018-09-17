@@ -2,7 +2,9 @@ import React, { Component } from 'react';
 import {
     BrowserRouter,
 } from 'react-router-dom';
+import { Provider } from 'mobx-react';
 import Routes from '../config/router';
+import appStore from '../store/appStore';
 
 class App extends Component {
     componentDidMount() {
@@ -11,9 +13,12 @@ class App extends Component {
 
     render() {
         return (
-            <BrowserRouter>
-                <Routes />
-            </BrowserRouter>
+            <Provider appStore={appStore}>
+                <BrowserRouter>
+                    <Routes />
+                </BrowserRouter>
+            </Provider>
+
         );
     }
 }
