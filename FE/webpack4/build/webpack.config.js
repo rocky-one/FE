@@ -184,7 +184,8 @@ const config = {
             cssProcessor: require('cssnano'),
             cssProcessorOptions: {
                 //parser: require('postcss-safe-parser'), // 修正语法错误
-                discardComments: { removeAll: true }
+                discardComments: { removeAll: true },
+                safe: true, // 避免重新计算 z-index
             },
             autoprefixer: false,
             //autoprefixer: { disable: true },  // 如果有前缀被移除的情况 添加此配置试试
