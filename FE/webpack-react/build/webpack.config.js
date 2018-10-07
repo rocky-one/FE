@@ -103,6 +103,10 @@ const config = {
             // chunks: ['index'],
             // inject: true
         }),
+        new HtmlWebpackPlugin({
+            filename: 'server.ejs',
+            template: '!!ejs-compiled-loader!' + path.join(__dirname, '../src/server.template.ejs'),
+        }),
     ],
 }
 if(dev){
@@ -118,6 +122,9 @@ if(dev){
         publicPath:'/public',
         historyApiFallback: {
             index: '/public/index.html'
+        },
+        proxy: {
+            '/api': 'http://localhost:8091'
         }
     }
 }

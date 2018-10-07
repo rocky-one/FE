@@ -4,7 +4,7 @@ import {
     action,
 } from 'mobx';
 
-export class AppState {
+export default class AppStore {
     @observable count = 0;
 
     @observable name = 'rocky';
@@ -20,8 +20,15 @@ export class AppState {
     @action changeName(name) {
         this.name = name;
     }
+
+    toJson() {
+        return {
+            count: this.count,
+            name: this.name,
+        }
+    }
 }
 
-const appStore = new AppState();
+// const appStore = new AppState();
 
-export default appStore;
+// export default appStore;

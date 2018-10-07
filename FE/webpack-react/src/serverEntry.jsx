@@ -1,4 +1,17 @@
 import React from 'react';
-import App from './views/App.jsx';
+import { StaticRouter } from 'react-router-dom';
+import { Provider, useStaticRendering } from 'mobx-react';
+import { createStoreMap } from './store/store';
+import Routes from './config/router';
 
-export default <App />;
+useStaticRendering(true);
+
+export default (stores, routerContext, url) => (
+    <Provider {...stores} >
+        <StaticRouter context={routerContext} location={url}>
+            <Routes />
+        </StaticRouter>
+    </Provider>
+)
+
+export { createStoreMap }

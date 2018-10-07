@@ -4,7 +4,7 @@ import {
 } from 'react-router-dom';
 import { Provider } from 'mobx-react';
 import Routes from '../config/router';
-import appStore from '../store/appStore';
+import { AppStore } from '../store/store';
 
 class App extends Component {
     componentDidMount() {
@@ -13,7 +13,7 @@ class App extends Component {
 
     render() {
         return (
-            <Provider appStore={appStore}>
+            <Provider appStore={new AppStore()}>
                 <BrowserRouter>
                     <Routes />
                 </BrowserRouter>

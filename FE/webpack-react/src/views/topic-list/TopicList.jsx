@@ -4,7 +4,7 @@ import {
     observer,
     inject,
 } from 'mobx-react';
-import { AppState } from '../../store/appStore';
+import { AppStore } from '../../store/store';
 
 @inject('appStore') @observer
 class TopicList extends Component {
@@ -17,6 +17,18 @@ class TopicList extends Component {
             appStore,
         } = this.props;
         appStore.changeName(event.target.value);
+    }
+
+    asyncBootstrap() {
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                const {
+                    appStore,
+                } = this.props;
+                appStore.count = 'hh';
+                resolve(true)
+            }, 1000);
+        })
     }
 
     render() {
@@ -34,5 +46,5 @@ class TopicList extends Component {
 export default TopicList;
 
 TopicList.propTypes = {
-    appStore: PropTypes.instanceOf(AppState).isRequired,
+    appStore: PropTypes.instanceOf(AppStore).isRequired,
 }
