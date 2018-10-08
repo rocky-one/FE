@@ -4,7 +4,7 @@ import {
     observer,
     inject,
 } from 'mobx-react';
-import { AppStore } from '../../store/store';
+// import { AppStore } from '../../store/store';
 
 @inject('appStore') @observer
 class TopicList extends Component {
@@ -25,7 +25,7 @@ class TopicList extends Component {
                 const {
                     appStore,
                 } = this.props;
-                appStore.count = 'hh';
+                appStore.count = 3;
                 resolve(true)
             }, 1000);
         })
@@ -46,5 +46,5 @@ class TopicList extends Component {
 export default TopicList;
 
 TopicList.propTypes = {
-    appStore: PropTypes.instanceOf(AppStore).isRequired,
+    appStore: PropTypes.any,// eslint-disable-line
 }

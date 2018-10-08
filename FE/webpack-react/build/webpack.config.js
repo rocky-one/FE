@@ -101,7 +101,6 @@ const config = {
             // title: '哈哈',
             // hash: true,
             // chunks: ['index'],
-            // inject: true
         }),
         new HtmlWebpackPlugin({
             filename: 'server.ejs',

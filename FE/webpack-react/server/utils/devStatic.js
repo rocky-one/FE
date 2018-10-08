@@ -62,7 +62,6 @@ module.exports = function (app) {
                 }
                 const content = ReactDomServer.renderToString(app);
                 const store = getStore(stores);
-                console.log(store,99)
                 const html = ejs.render(template, {
                     appString: content,
                     initialState: serialize(store),

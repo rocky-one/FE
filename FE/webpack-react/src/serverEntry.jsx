@@ -6,12 +6,12 @@ import Routes from './config/router';
 
 useStaticRendering(true);
 
-export default (stores, routerContext, url) => (
-    <Provider {...stores} >
+export default (stores, routerContext, url) => {
+    return <Provider {...stores}>
         <StaticRouter context={routerContext} location={url}>
             <Routes />
         </StaticRouter>
     </Provider>
-)
+}
 
 export { createStoreMap }

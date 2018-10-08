@@ -5,9 +5,14 @@ import {
 } from 'mobx';
 
 export default class AppStore {
-    @observable count = 0;
+    constructor({ count, name } = { count: 9, name: 'rocky' }) {
+        this.count = count;
+        this.name = name;
+    }
 
-    @observable name = 'rocky';
+    @observable count;
+
+    @observable name;
 
     @computed get msg() {
         return `${this.name} say cont ${this.count}`;
