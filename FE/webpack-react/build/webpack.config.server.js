@@ -21,6 +21,7 @@ module.exports = {
     resolve: {
         extensions: ['.js', '.jsx', '.less'],
     },
+    externals: Object.keys(require('../package.json').dependencies),
     module: {
         rules: [
             {

@@ -10,6 +10,21 @@ const ejs = require('ejs');
 const serialize = require('serialize-javascript');
 const Module = module.constructor;
 const memory = new MemoryFs();
+const NativeModule = require('module');
+const vm = require('vm');
+const Helmet = require('react-helmet').default;
+
+const getModuleFromString = (bundle, filename) => {
+    const m = { exports: {}}
+    const wrapper = NativeModule.wrap(bundle)
+    const script = new vm.Script(wrapper, {
+        filename: filename,
+        displayErrors: true,
+    })
+    const result = script.runInThisContext()
+    result.call(m.exports, m.exports, require, m)
+    return m
+}
 const serverCompoler = webpack(serverConfig);
 
 serverCompoler.outputFileSystem = memory;
@@ -23,8 +38,10 @@ serverCompoler.watch({}, (err, stats) => {
     stats.warnings.forEach(warn => console.error(warn));
     const bundlePath = path.join(serverConfig.output.path, serverConfig.output.filename);
     const bundle = memory.readFileSync(bundlePath, 'utf-8');
-    const m = new Module();
-    m._compile(bundle, 'serverEntry.js');
+    // const m = new Module();
+    // m._compile(bundle, 'serverEntry.js');
+    const m = getModuleFromString(bundle, 'serverEntry.js');
+
     serverBundle = m.exports.default;
     createStoreMap = m.exports.createStoreMap;
 })
@@ -36,7 +53,6 @@ const getTemplate = () => {
     })
 }
 const getStore = (stores) => {
-    console.log(stores.appStore.toJson(),876)
     return Object.keys(stores).reduce((result,storeName) => {
         result[storeName] = stores[storeName].toJson();
         console.log(result[storeName],2)
@@ -60,11 +76,16 @@ module.exports = function (app) {
                     res.end();
                     return;
                 }
+                const helmet = Helmet.rewind();
                 const content = ReactDomServer.renderToString(app);
                 const store = getStore(stores);
                 const html = ejs.render(template, {
                     appString: content,
                     initialState: serialize(store),
+                    meta: helmet.meta.toString(),
+                    title: helmet.title.toString(),
+                    style: helmet.style.toString(),
+                    link: helmet.link.toString(),
                 });
                 res.send(html);
                 //res.status(200).send(template.replace('<!-- app -->', content));

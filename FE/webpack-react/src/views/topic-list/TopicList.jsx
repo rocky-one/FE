@@ -4,6 +4,8 @@ import {
     observer,
     inject,
 } from 'mobx-react';
+import Helmet from 'react-helmet';
+
 // import { AppStore } from '../../store/store';
 
 @inject('appStore') @observer
@@ -37,6 +39,10 @@ class TopicList extends Component {
         } = this.props;
         return (
             <div>
+                <Helmet>
+                    <title>我是标题</title>
+                    <meta name="app" content="desc" />
+                </Helmet>
                 <input onChange={this.onChange} />
                 {appStore.msg}
             </div>
