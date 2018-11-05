@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-import { handleList } from './components/list/utils';
 import RouterRoot from './router/RouterRoot';
 
 class App extends Component {

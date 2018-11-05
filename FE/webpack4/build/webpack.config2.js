@@ -16,6 +16,9 @@ const config = {
     mode: 'development',
     resolve: {
         extensions: ['.js', '.jsx', '.less'],
+        alias: {
+            jquery: path.resolve(__dirname,'../src/lib/jquery-2.1.1.min.js')
+        }
     },
     module: {
         rules: [
@@ -115,8 +118,10 @@ const config = {
         new webpack.DllReferencePlugin({
             manifest: require('./manifest.json'),
             context: path.resolve(__dirname,'../'),
-        })
-        
+        }),
+        new webpack.ProvidePlugin({
+            $: 'jquery'
+        }),
 
     ],
     devServer: {

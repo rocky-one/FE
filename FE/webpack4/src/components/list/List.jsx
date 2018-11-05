@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { handleList } from './utils';
-import listStyle from './list.css';
-import listStyle2 from './list2.less';
+import './list.css';
 import { Button } from 'antd';
 
 class List extends Component {
@@ -9,11 +8,12 @@ class List extends Component {
         super();
         handleList();
     }
-
+    componentDidMount() {
+        $('.list').addClass('news')
+    }
     render() {
-        return <div className={`${listStyle.list} ${listStyle2.list2}`}>
+        return <div className="list">
             List
-            <div className={listStyle2.listChild}></div>
             <Button>按钮s</Button>
         </div>
     }

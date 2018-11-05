@@ -6,6 +6,8 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const HappyPack = require('happypack');
 const os = require('os');
+const glob = require('glob');
+const PurifyCss = require('purifycss-webpack');
 
 const config = {
     entry: {
@@ -21,6 +23,9 @@ const config = {
     },
     resolve: {
         extensions: ['.js', '.jsx', '.less', '.css'],
+        alias: {
+            jquery: path.resolve(__dirname,'../src/lib/jquery-2.1.1.min.js')
+        }
     },
     optimization: {
         // minimizer: [ // 会覆盖默认项 new UglifyJsPlugin({})需要自行设置
@@ -146,6 +151,9 @@ const config = {
             filename: 'style/[name].[hash:8].css',
             // chunkFilename: "[name].css"
         }),
+        new webpack.ProvidePlugin({
+            $: 'jquery'
+        }),
         new HappyPack({
             id: 'css',
             //HappyPack 实例都使用同一个共享进程池中的子进程去处理任务，以防止资源占用过多
@@ -157,7 +165,8 @@ const config = {
                     loader: "css-loader",
                     options: {
                         modules: true,
-                        localIdentName: '[local]-[hash:base64:6]'
+                        localIdentName: '[local]-[hash:base64:6]',
+                        // allchunk:
                     }
                 },
                 {
@@ -183,9 +192,9 @@ const config = {
             assetNameRegExp: /\.css$/,
             cssProcessor: require('cssnano'),
             cssProcessorOptions: {
-                //parser: require('postcss-safe-parser'), // 修正语法错误
+                parser: require('postcss-safe-parser'), // 修正语法错误
                 discardComments: { removeAll: true },
-                safe: true, // 避免重新计算 z-index
+                //safe: true, // 避免重新计算 z-index
             },
             autoprefixer: false,
             //autoprefixer: { disable: true },  // 如果有前缀被移除的情况 添加此配置试试
@@ -202,6 +211,13 @@ const config = {
         //     filename: 'index2.html',
         //     template: path.join(__dirname,'../src/index2.html')
         // }),
+        // 去除冗余css 无效 待解决
+        // new PurifyCss({ 
+        //     paths: glob.sync([
+        //         path.join(__dirname, './*.html'),
+        //         path.join(__dirname, './src/*.js') 
+        //     ])
+        // })
     ]
 }
 

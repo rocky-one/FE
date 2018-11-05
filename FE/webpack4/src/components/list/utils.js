@@ -3,3 +3,8 @@ export const handleList = () => {
     let b = '你好';
     console.log(a, b)
 }
+
+export const testTree = () => {
+    let a = 'test哈哈';
+    console.log(a,'a')
+}
