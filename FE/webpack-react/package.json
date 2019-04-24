@@ -74,6 +74,7 @@
     "build": "npm run build:client && npm run build:server",
     "clear": "rimraf dist",
     "start": "cross-env NODE_ENV=development webpack-dev-server --config build/webpack.config.js",
+    "start:build": "cross-env NODE_ENV=production node server/server.js",
     "start:node": "node server/server.js",
     "lint": "eslint --ext .js --ext .jsx src/",
     "precommit": "npm run lint"

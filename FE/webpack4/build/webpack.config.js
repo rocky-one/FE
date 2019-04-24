@@ -151,6 +151,7 @@ const config = {
             filename: 'style/[name].[hash:8].css',
             // chunkFilename: "[name].css"
         }),
+        // 或者是在rules 中使用imports-loader
         new webpack.ProvidePlugin({
             $: 'jquery'
         }),
