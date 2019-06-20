@@ -1,13 +1,27 @@
 import React, { useState, useEffect } from 'react'
-import { store$ } from '../store'
+import { stmA$, dispatch } from '../store'
+
+
 export default function A() {
+
     const [count, setCount] = useState(0)
     const [list, setList] = useState([])
     useEffect(() => {
-        store$.subscribe(store => {
+        
+        dispatch({
+            name: 'workbook',
+            type: 'getList',
+            payload: {
+                params: null
+            }
+        })
+
+        stmA$.subscribe(store => {
             setList(store.list)
         })
+
     }, [])
+
     return (
         <div>
             <div>A模块</div>
@@ -16,9 +30,19 @@ export default function A() {
                 list.map(item => <div key={item.id}>{item.name}</div>)
             }
             <button onClick={() => {
-                store$.next({ list: [{ name: 11, id: 1 }, { name: 22, id: 2 }] })
+                dispatch({
+                    name: 'workbook',
+                    type: 'addList',
+                    payload: {
+                        data: {
+                            name: `${Math.random() * 1000}`,
+                            id: Math.random()
+                        }
+                    }
+                })
                 setCount(count + 1)
             }}>点击</button>
+
         </div>
     )
 }
