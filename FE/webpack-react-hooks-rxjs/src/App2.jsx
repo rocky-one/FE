@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
-import RouterRoot from './router/RouterRoot';
+import List from './components/list/List.jsx';
 
 class App extends Component {
     constructor() {
@@ -9,7 +9,8 @@ class App extends Component {
     render() {
         return (
             <div>
-                <RouterRoot />
+                首页2
+                <List />
             </div>
         )
     }
