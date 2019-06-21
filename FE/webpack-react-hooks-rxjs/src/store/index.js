@@ -1,6 +1,13 @@
 import { BehaviorSubject } from 'rxjs'
 import { ajax } from 'rxjs/ajax';
-import { map } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
+import { Rx } from 'rxjs'
+const obs$ = ajax.getJSON(`https://api.github.com/users?per_page=5`).pipe(
+  map(userResponse => console.log('users: ', userResponse))
+);
+obs$.subscribe(res=>{
+    console.log(res,456)
+})
 
 class StoreFactory {
     constructor(state$, option) {
@@ -12,12 +19,13 @@ class StoreFactory {
     }
 
     runProducer = (action) => {
-        this.state = this.producer[action.type](action, this.state)
-        this.state$.next(this.state)
+        //this.state = 
+        this.producer[action.type](action, this.state)
+        //this.state$.next(this.state)
     }
 
     runEffect = (action) => {
-        this.state = this.effect[action.type](action, this.state)
+        this.state = this.effect[action.type](action.payload.params)
         this.state$.next(this.state)
     }
 }
@@ -32,7 +40,8 @@ export const stm = (model) => {
 }
 
 export function dispatch(action) {
-    const run = action.data ? storeMap[action.name]['runProducer'] : storeMap[action.name]['runEffect']
+    const run = action.payload.data ? storeMap[action.name]['runProducer'] : storeMap[action.name]['runEffect']
+    
     run(action)
 }
 
@@ -54,7 +63,7 @@ export const stmA$ = stm({
     },
     effect: {
         getList: (params) => {
-            ajax(`http://192.168.2.58:8181/c1/workbook/getByParentId`).pipe(
+            ajax(`https://api.github.com/users?per_page=5`).pipe(
                 map(res => {
                     console.log(res, 'res')
                     dispatch({
