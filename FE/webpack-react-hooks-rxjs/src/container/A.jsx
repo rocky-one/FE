@@ -8,13 +8,13 @@ export default function A() {
     const [list, setList] = useState([])
     useEffect(() => {
         
-        dispatch({
-            name: 'workbook',
-            type: 'getList',
-            payload: {
-                params: null
-            }
-        })
+        // dispatch({
+        //     name: 'workbook',
+        //     type: 'getList',
+        //     payload: {
+        //         params: null
+        //     }
+        // })
 
         stmA$.subscribe(store => {
             setList(store.list)
@@ -28,7 +28,7 @@ export default function A() {
             <div>count: {count}</div>
             {
                 list.map(item => <div key={item.id}>{item.name}</div>)
-            }
+            }       
             <button onClick={() => {
                 dispatch({
                     name: 'workbook',
