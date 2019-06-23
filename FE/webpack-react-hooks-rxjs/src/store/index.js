@@ -85,12 +85,12 @@ const obs = [users, users2, users3]
 
 
 of(1).pipe(
-    map(res => {
-        return getList2(res)
+    concatMap(res => {
+        return getList2(res)//.pipe(map(res => res))
     }),
-    mergeMap(res => {
-        console.log(res,345)
-        return getList3(res).pipe(map(res => res))
+    concatMap(res => {
+        console.log(res, 345)
+        return getList3(res)//.pipe(map(res => res))
     })
 ).subscribe(res => {
     console.log(res, 'ress')
@@ -131,44 +131,69 @@ class StoreFactory {
         this.name = option.name
         this.state = option.state || {}
         this.state$ = state$
-        this.producer = option.producer
+        this.reducers = option.reducers
         this.effect = option.effect
     }
-
-    runProducer = (action) => {
-
-        this.state = this.producer[action.type](action, this.state)
+    runReducer = (action) => {
+        this.state = this.reducers[action.type](action, this.state)
         this.state$.next(this.state)
     }
-
     runEffect = (action) => {
         this.effect[action.type](action.payload.params)
     }
+    dispatch = () => {
+
+    }
 }
 
-const storeMap = {}
+class modelMap {
+    constructor(option) {
+        this.modelMap = {}
+    }
+    add = (modelName, store) => {
+        if (this.modelMap[modelName]) {
+            throw 'Template name already exists'
+        }
+        this.modelMap[modelName] = store
+    }
+    getModelMap = () => {
+        return this.modelMap
+    }
+    getModelState = (modelName) => {
+        if (this.modelMap[modelName]) {
+            return this.modelMap[modelName].state
+        }
+        return null
+    }
+}
+const mIns = new modelMap()
 
-export const stm = (model) => {
+export const creatStore = (model) => {
     const state$ = new BehaviorSubject(model.state)
     const store = new StoreFactory(state$, model)
-    storeMap[model.name] = store
-    return state$
+    mIns.add(model.name, store)
+    return {
+        state$,
+        model: {
+            effect: store.effect
+        }
+    }
 }
 
 export function dispatch(action) {
     if (action.payload.hasOwnProperty('data')) {
-        storeMap[action.name]['runProducer'](action, storeMap[action.name].state)
+        mIns.modelMap[action.name]['runReducer'](action, mIns.getModelState(action.name))
     } else {
-        storeMap[action.name]['runEffect'](action, storeMap[action.name].state)
+        mIns.modelMap[action.name]['runEffect'](action, mIns.getModelState(action.name))
     }
 }
 
-export const stmA$ = stm({
+export const stmA = creatStore({
     name: 'workbook',
     state: {
-        list: []
+        list: [{ name: '咕噜', id: 3 }]
     },
-    producer: {
+    reducers: {
         getList: (action, state) => {
             state.list = action.payload.data
             return state
@@ -181,7 +206,6 @@ export const stmA$ = stm({
     effect: {
         getList: (params) => {
             users.subscribe(res => {
-                console.log(res, 'res')
                 dispatch({
                     name: 'workbook',
                     type: 'getList',

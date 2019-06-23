@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { stmA$, dispatch } from '../store'
+import { stmA, dispatch } from '../store'
 
 
 export default function A() {
@@ -8,15 +8,15 @@ export default function A() {
     const [list, setList] = useState([])
     useEffect(() => {
         
-        // dispatch({
-        //     name: 'workbook',
-        //     type: 'getList',
-        //     payload: {
-        //         params: null
-        //     }
-        // })
-
-        stmA$.subscribe(store => {
+        dispatch({
+            name: 'workbook',
+            type: 'getList',
+            payload: {
+                params: null
+            }
+        })
+        stmA.state$.subscribe(store => {
+            console.log(stmA.state$.getValue(),4455)
             setList(store.list)
         })
 
