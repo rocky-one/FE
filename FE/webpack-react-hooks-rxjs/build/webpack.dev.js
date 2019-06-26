@@ -15,9 +15,9 @@ const config = {
     },
     mode: 'development',
     resolve: {
-        extensions: ['.js', '.jsx', '.less'],
+        extensions: ['.js', '.jsx', '.ts', '.tsx','.less'],
         alias: {
-            jquery: path.resolve(__dirname,'../src/lib/jquery-2.1.1.min.js')
+            jquery: path.resolve(__dirname, '../src/lib/jquery-2.1.1.min.js')
         }
     },
     module: {
@@ -56,7 +56,7 @@ const config = {
                         //     localIdentName:'[local]-[hash:base64:6]'
                         // }
                     },
-                    
+
                     {
                         loader: "postcss-loader",
                         options: {
@@ -84,8 +84,8 @@ const config = {
                     {
                         loader: "css-loader",
                         options: {
-                            modules:true,
-                            localIdentName:'[local]-[hash:base64:6]'
+                            modules: true,
+                            localIdentName: '[local]-[hash:base64:6]'
                         }
                     },
                     {
@@ -105,7 +105,12 @@ const config = {
                 test: /\.(js|jsx)$/,
                 loader: 'babel-loader',
             },
-            
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/
+            },
+
         ]
     },
     plugins: [
@@ -117,7 +122,7 @@ const config = {
         }),
         new webpack.DllReferencePlugin({
             manifest: require('./manifest.json'),
-            context: path.resolve(__dirname,'../'),
+            context: path.resolve(__dirname, '../'),
         }),
         new webpack.ProvidePlugin({
             $: 'jquery'
