@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { stmA, dispatch } from '../store'
-
-
-export default function A() {
+import { dispatch, inject } from '../store'
+import {stmA} from './storeA'
+function A() {
 
     const [count, setCount] = useState(0)
     const [list, setList] = useState([])
@@ -25,6 +24,7 @@ export default function A() {
     return (
         <div>
             <div>A模块</div>
+            
             <div>count: {count}</div>
             {
                 list.map(item => <div key={item.id}>{item.name}</div>)
@@ -46,3 +46,5 @@ export default function A() {
         </div>
     )
 }
+
+export default inject()(A)
