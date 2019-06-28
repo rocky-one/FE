@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { stmA, dispatch } from '../store'
+import { storeA, dispatch } from '../store'
 
 
 export default function A() {
@@ -7,16 +7,16 @@ export default function A() {
     const [count, setCount] = useState(0)
     const [list, setList] = useState([])
     useEffect(() => {
+        // dispatch({
+        //     name: 'workbook',
+        //     type: 'getList',
+        //     payload: {
+        //         params: null
+        //     }
+        // })
+        storeA.model.effect.getList()
         
-        dispatch({
-            name: 'workbook',
-            type: 'getList',
-            payload: {
-                params: null
-            }
-        })
-        stmA.state$.subscribe(store => {
-            console.log(stmA.state$.getValue(),4455)
+        storeA.state$.subscribe(store => {
             setList(store.list)
         })
 
@@ -28,17 +28,21 @@ export default function A() {
             <div>count: {count}</div>
             {
                 list.map(item => <div key={item.id}>{item.name}</div>)
-            }       
+            }
             <button onClick={() => {
-                dispatch({
-                    name: 'workbook',
-                    type: 'addList',
-                    payload: {
-                        data: {
-                            name: `${Math.random() * 1000}`,
-                            id: Math.random()
-                        }
-                    }
+                // dispatch({
+                //     name: 'workbook',
+                //     type: 'addList',
+                //     payload: {
+                //         params: {
+                //             name: `${Math.random() * 1000}`,
+                //             id: Math.random()
+                //         }
+                //     }
+                // })
+                storeA.model.effect.addList({
+                    name: `${Math.random() * 1000}`,
+                    id: Math.random()
                 })
                 setCount(count + 1)
             }}>点击</button>

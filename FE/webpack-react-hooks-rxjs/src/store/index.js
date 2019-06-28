@@ -19,7 +19,7 @@ import { map, mergeMap, concatMap, delay } from 'rxjs/operators';
 // log(2);
 // queueScheduler.schedule(() => log(3));
 
-const users = ajax({
+const getUsers = ajax({
     url: 'https://httpbin.org/delay/2',
     method: 'POST',
     headers: {
@@ -28,102 +28,8 @@ const users = ajax({
     },
     body: [{ name: '哈哈', id: 1 }, { name: '哈哈2', id: 2 }]
 })
-const users2 = ajax({
-    url: 'https://httpbin.org/delay/2',
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'rxjs-custom-header': 'Rxjs'
-    },
-    body: {
-        rxjs: 2
-    }
-})
-const users3 = Observable.create(observer => {
-    observer.next('Semlinker');
-});
-
-const getList2 = (params) => {
-    return ajax({
-        url: 'https://httpbin.org/delay/2',
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'rxjs-custom-header': 'Rxjs'
-        },
-        body: {
-            rxjs: 111
-        }
-    })
-}
-
-const getList3 = (params) => {
-    return ajax({
-        url: 'https://httpbin.org/delay/2',
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'rxjs-custom-header': 'Rxjs'
-        },
-        body: {
-            rxjs: 222
-        }
-    })
-}
-const obs = [users, users2, users3]
-// concat(...obs).subscribe(detail => console.log(detail));
-
-// 发出延迟值
-// const source = of(2200, 2000);
-// const example = source.pipe(
-//   concatMap(val => of(`Delayed by: ${val}ms`).pipe(delay(val)))
-// );
-//  example.subscribe(val =>
-//   console.log(`With concatMap: ${val}`)
-// );
 
 
-
-of(1).pipe(
-    concatMap(res => {
-        return getList2(res)//.pipe(map(res => res))
-    }),
-    concatMap(res => {
-        console.log(res, 345)
-        return getList3(res)//.pipe(map(res => res))
-    })
-).subscribe(res => {
-    console.log(res, 'ress')
-})
-
-
-// getList2().pipe(
-//     map(res => {
-//         return res
-//     })
-// ).pipe(
-//     map(res => {
-//         console.log(res,345)
-//         return getList3(res)
-//     })
-// ).subscribe(res => {    
-//     console.log(res, 'ress')
-// })
-
-
-
-// const obs$ = ajax(`https://httpbin.org/delay/2`).pipe(
-//   map(userResponse => console.log('users: ', userResponse))
-// );
-// obs$.subscribe(res=>{
-//     console.log(res,456)
-// })
-
-// ajax.getJSON(`https://api.github.com/users?per_page=5`).pipe(
-//     map(res => {
-//         console.log(res, 'res')
-//     })
-// ).subscribe(res => console.log(res, 99))
 
 
 class StoreFactory {
@@ -141,9 +47,7 @@ class StoreFactory {
     runEffect = (action) => {
         this.effect[action.type](action.payload.params)
     }
-    dispatch = () => {
 
-    }
 }
 
 class modelMap {
@@ -188,11 +92,18 @@ export function dispatch(action) {
     }
 }
 
-export const stmA = creatStore({
+export function getState(storeName) {
+    return mIns.getModelState(storeName)
+}
+
+export const storeA = creatStore({
+    // store 名称 需唯一
     name: 'workbook',
+    // 组件 state 
     state: {
         list: [{ name: '咕噜', id: 3 }]
     },
+    // 处理state 生成新的state
     reducers: {
         getList: (action, state) => {
             state.list = action.payload.data
@@ -203,9 +114,10 @@ export const stmA = creatStore({
             return state
         }
     },
+    // 副作用处理
     effect: {
         getList: (params) => {
-            users.subscribe(res => {
+            getUsers.subscribe(res => {
                 dispatch({
                     name: 'workbook',
                     type: 'getList',
@@ -213,6 +125,15 @@ export const stmA = creatStore({
                         data: JSON.parse(res.response.data)
                     }
                 })
+            })
+        },
+        addList: (params) => {
+            dispatch({
+                name: 'workbook',
+                type: 'addList',
+                payload: {
+                    data: params
+                }
             })
         }
     }

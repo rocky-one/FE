@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { stmA } from '../store'
+import { storeA } from '../store'
 export default function B() {
     const [count, setCount] = useState(0)
     const [list, setList] = useState([])
     useEffect(() => {
-        stmA.state$.subscribe(store => {
+        storeA.state$.subscribe(store => {
             setList(store.list)
         })
     }, [])
