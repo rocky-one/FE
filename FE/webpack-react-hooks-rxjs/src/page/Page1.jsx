@@ -9,7 +9,7 @@ class Page1 extends Component {
 
     render() {
         return <div className="Page1">
-           <A />
+           <A a={1} />
            <B />
            <Tree data={[{name:123,id:1}]} />
         </div>

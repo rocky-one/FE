@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react'
+<<<<<<< HEAD
 import { storeA } from '../store'
+=======
+import {stmA} from './storeA'
+>>>>>>> fb74ae8c050e3dab798d80035a763236f77c86f6
 export default function B() {
     const [count, setCount] = useState(0)
     const [list, setList] = useState([])
@@ -19,3 +23,4 @@ export default function B() {
         </div>
     )
 }
+
