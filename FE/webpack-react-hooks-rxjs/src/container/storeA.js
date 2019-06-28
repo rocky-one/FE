@@ -1,9 +1,10 @@
 import { createStore, dispatch } from '../store'
 
-export const stmA = createStore({
+export const storeA = createStore({
     name: 'workbook',
     state: {
-        list: [{ name: '咕噜', id: 3 }]
+        list: [{ name: '咕噜', id: 3 }],  
+        list2: [{ name: 'git', id: 3234 }]
     },
     reducers: {
         getList: (action, state) => {
@@ -17,15 +18,24 @@ export const stmA = createStore({
     },
     effects: {
         getList: (params) => {
-            setTimeout(()=>{
+            setTimeout(() => {
                 dispatch({
                     name: 'workbook',
                     type: 'getList',
                     payload: {
-                        data: [{name:'jjjj',id:3}]
+                        data: [{ name: 'jjjj', id: 3 }]
                     }
                 })
-            },1000)
+            }, 1000)
+        },
+        addList: (action, state) => {
+            dispatch({
+                name: 'workbook',
+                type: 'addList',
+                payload: {
+                    data: { name: Math.random(), id: Math.random() }
+                }
+            })
         }
     }
 })

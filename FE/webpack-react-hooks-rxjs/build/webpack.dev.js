@@ -14,6 +14,7 @@ const config = {
         publicPath: '/dist/',
     },
     mode: 'development',
+    devtool: 'cheap-module-source-map',
     resolve: {
         extensions: ['.js', '.jsx', '.ts', '.tsx','.less'],
         alias: {

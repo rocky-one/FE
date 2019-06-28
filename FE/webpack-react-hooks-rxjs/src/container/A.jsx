@@ -1,32 +1,27 @@
 import React, { useState, useEffect } from 'react'
-<<<<<<< HEAD
-import { storeA, dispatch } from '../store'
-
-
-export default function A() {
-=======
 import { dispatch, inject } from '../store'
-import {stmA} from './storeA'
-function A() {
->>>>>>> fb74ae8c050e3dab798d80035a763236f77c86f6
-
+import {storeA} from './storeA'
+const obj = {a:1}
+const obj2 = obj
+obj2.abc = 123
+function A(props) {
     const [count, setCount] = useState(0)
-    const [list, setList] = useState([])
-    useEffect(() => {
-        // dispatch({
-        //     name: 'workbook',
-        //     type: 'getList',
-        //     payload: {
-        //         params: null
-        //     }
-        // })
-        storeA.model.effect.getList()
+    const [list, setList] = useState(props.list)
+    // useEffect(() => {
+    //     // dispatch({
+    //     //     name: 'workbook',
+    //     //     type: 'getList',
+    //     //     payload: {
+    //     //         params: null
+    //     //     }
+    //     // })
+    //     storeA.effects.getList()
         
-        storeA.state$.subscribe(store => {
-            setList(store.list)
-        })
+    //     storeA.state$.subscribe(store => {
+    //         setList(store.list)
+    //     })
 
-    }, [])
+    // }, [])
 
     return (
         <div>
@@ -47,7 +42,7 @@ function A() {
                 //         }
                 //     }
                 // })
-                storeA.model.effect.addList({
+                storeA.effects.addList({
                     name: `${Math.random() * 1000}`,
                     id: Math.random()
                 })
@@ -57,5 +52,9 @@ function A() {
         </div>
     )
 }
-
-export default inject()(A)
+function mapStateToProps (state,props){
+    return {
+        list: state.workbook.list
+    }
+}
+export default inject(mapStateToProps)(A)

@@ -1,26 +1,30 @@
 import React, { useState, useEffect } from 'react'
-<<<<<<< HEAD
-import { storeA } from '../store'
-=======
-import {stmA} from './storeA'
->>>>>>> fb74ae8c050e3dab798d80035a763236f77c86f6
-export default function B() {
+import { dispatch, inject } from '../store'
+import {storeA} from './storeA'
+
+function B(props) {
     const [count, setCount] = useState(0)
-    const [list, setList] = useState([])
-    useEffect(() => {
-        storeA.state$.subscribe(store => {
-            setList(store.list)
-        })
-    }, [])
+    const [list2, setList] = useState(props.list2)
+    // useEffect(() => {
+    //     storeA.state$.subscribe(store => {
+    //         setList(store.list)
+    //     })
+    // }, [])
     return (
         <div>
             <div>B模块</div>
             <div>count: {count}</div>
             <button onClick={() => { setCount(count + 1) }}>点击</button>
             {
-                list.map(item => <div key={item.id}>{item.name}</div>)
+                list2.map(item => <div key={item.id}>{item.name}</div>)
             }
         </div>
     )
 }
 
+function mapStateToProps (state){
+    return {
+        list2: state.workbook.list2
+    }
+}
+export default inject(mapStateToProps)(B)
