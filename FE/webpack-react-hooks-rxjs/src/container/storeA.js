@@ -12,7 +12,11 @@ export const storeA = createStore({
             return state
         },
         addList: (action, state) => {
-            state.list.push(action.payload.data)
+            if(action.payload.data){
+                const s = state
+                state.list = [...s.list, action.payload.data]
+                return state
+            }
             return state
         }
     },
@@ -33,7 +37,49 @@ export const storeA = createStore({
                 name: 'workbook',
                 type: 'addList',
                 payload: {
-                    data: { name: Math.random(), id: Math.random() }
+                    data: action.payload.params
+                }
+            })
+        }
+    }
+})
+
+export const storeB = createStore({
+    name: 'workbookB',
+    state: {
+        list: [{ name: '咕噜B', id: 3 }],  
+        list2: [{ name: 'gitB', id: 3234 }]
+    },
+    reducers: {
+        getList: (action, state) => {
+            state.list = action.payload.data
+            return state
+        },
+        addList: (action, state) => {
+            //if(action.payload.data){
+                state.list.push(action.payload.data)
+            //}
+            return state
+        }
+    },
+    effects: {
+        getList: (params) => {
+            setTimeout(() => {
+                dispatch({
+                    name: 'workbookB',
+                    type: 'getList',
+                    payload: {
+                        data: [{ name: 'jjjjBBB', id: 3 }]
+                    }
+                })
+            }, 1000)
+        },
+        addList: (action, state) => {
+            dispatch({
+                name: 'workbookB',
+                type: 'addList',
+                payload: {
+                    data: action.payload.params
                 }
             })
         }

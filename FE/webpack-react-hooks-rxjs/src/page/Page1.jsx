@@ -10,6 +10,9 @@ class Page1 extends Component {
     }
     componentDidMount() {
         console.log(this.myRefC,'smyRef')
+        setTimeout(()=>{
+            this.myRefC.current.setList()
+        },1000)
     }
     render() {
         return <div className="Page1">
