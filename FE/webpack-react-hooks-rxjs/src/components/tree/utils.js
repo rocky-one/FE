@@ -1,6 +1,5 @@
 export function bfTree(tree = [], cb) {
-    let queue = [],
-        level = 0
+    let queue = []
     for (let i = 0; i < tree.length; i++) {
         tree[i].level = 0
         queue.push(tree[i])

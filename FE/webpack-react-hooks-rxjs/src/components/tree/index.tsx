@@ -1,5 +1,38 @@
 import * as React from 'react';
+import HandleTree from './HandleTree'
 
+new HandleTree({
+    data:[{
+        name:1,
+        parentId: null,
+        id: 1,
+        children: [
+            {
+                parentId:1,
+                id:1.1,
+                name: '1-1',
+                children: [
+                    {
+                        name: '1-1-1',
+                        parentId: 1.1
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        name:2,
+        parentId: null,
+        id:2,
+        children:[
+            {
+                name: 2.2,
+                id: 2.2,
+                parentId: 2
+            }
+        ]
+    }]
+})
 interface TreeProps {
     data: any[]
 }
