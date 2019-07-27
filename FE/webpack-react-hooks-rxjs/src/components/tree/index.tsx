@@ -1,50 +1,42 @@
-import * as React from 'react';
+import * as React from 'react'
 import HandleTree from './HandleTree'
+import { HandleTreeInterface, TreeData, NodeItem, TransformItem } from './interface'
+import Node from './Node'
 
-new HandleTree({
-    data:[{
-        name:1,
-        parentId: null,
-        id: 1,
-        children: [
-            {
-                parentId:1,
-                id:1.1,
-                name: '1-1',
-                children: [
-                    {
-                        name: '1-1-1',
-                        parentId: 1.1
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        name:2,
-        parentId: null,
-        id:2,
-        children:[
-            {
-                name: 2.2,
-                id: 2.2,
-                parentId: 2
-            }
-        ]
-    }]
-})
-interface TreeProps {
-    data: any[]
+interface TreeProps<T> {
+    data: T[]
 }
-export default class Tree extends React.Component<TreeProps, any> {
-    
+interface TreeState<T> {
+    data: Array<NodeItem>
+}
+
+export default class Tree<T> extends React.Component<TreeProps<T>, TreeState<T>> {
+    constructor(props: TreeProps<T>) {
+        super(props)
+        this.state = {
+            data: []
+        }
+    }
+    handleTree: any
+    componentDidMount() {
+        this.handleTree = new HandleTree({
+            data: this.props.data
+        })
+        this.setState({
+            data: this.handleTree.getViewData()
+        })
+    }
+    renderArrow = () => {
+        
+    }
     render() {
         const {
             data
-        } = this.props
-
+        } = this.state
         return <div className="list">
-            {data.map(item=><div key={item.id}>{item.name}</div>)}
+            {data.map((item: NodeItem) => <div key={item.id} >
+                <Node item={item} />
+            </div>)}
         </div>
     }
 }

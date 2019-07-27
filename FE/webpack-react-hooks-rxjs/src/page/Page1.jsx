@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
-import A from '../container/A'
-import B from '../container/B'
-import C from '../container/C'
+// import A from '../container/A'
+// import B from '../container/B'
+// import C from '../container/C'
 import Tree from '../components/tree'
 class Page1 extends Component {
     constructor() {
@@ -9,17 +9,59 @@ class Page1 extends Component {
         this.myRefC = React.createRef();
     }
     componentDidMount() {
-        console.log(this.myRefC,'smyRef')
-        setTimeout(()=>{
-            this.myRefC.current.setList()
-        },1000)
+       
     }
     render() {
         return <div className="Page1">
-           <A />
+           {/* <A />
            <B />
-           <C ref={this.myRefC}/>
-           <Tree data={[{name:123,id:1}]} />
+           <C ref={this.myRefC}/> */}
+           <Tree data={[{
+                name: '1',
+                parentId: null,
+                id: '1',
+                open: true,
+                children: [
+                    {
+                        parentId: '1',
+                        id: '1.1',
+                        name: '1-1',
+                        children: [
+                            {
+                                name: '1-1-1',
+                                id:'1.1.1',
+                                parentId: '1.1'
+                            }
+                        ]
+                    },
+                    {
+                        parentId: '1',
+                        id: '1.2',
+                        name: '1-2',
+                        open: true,
+                        children: [
+                            {
+                                name: '1-1-2',
+                                id:'1.1.2',
+                                parentId: '1.2'
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                name: '2',
+                parentId: null,
+                id: '2',
+                open: true,
+                children: [
+                    {
+                        name: '2.2',
+                        id: '2.2',
+                        parentId: '2'
+                    }
+                ]
+            }]} />
         </div>
     }
 }

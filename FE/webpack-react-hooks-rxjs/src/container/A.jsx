@@ -18,7 +18,6 @@ function A(props) {
     //     })
 
     // }, [])
-    console.log(999)
     return (
         <div>
             <div>A模块</div>
