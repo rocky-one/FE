@@ -43,7 +43,3 @@ export function dfsTree(tree = [], cb) {
     }
     return nodeList
 }
-
-export function treeTransList(tree = []) {
-
-}
