@@ -1,75 +1,93 @@
-import { HandleTreeInterface, TreeData, NodeItem, TransformItem } from './interface'
+import { HandleTreeInterface, MapData, NodeItem, TransformItem } from './interface'
 import { bfTree, dfsTree } from './utils'
 
 export default class HandleTree implements HandleTreeInterface {
     constructor(option: { data: any; }) {
-        this.mapData(option.data)
+        this.mapDatas(option.data)
         this.initViewData()
-        //this.data = dfsTree(option.data)
     }
-    private data: Array<NodeItem>
     private viewData: Array<NodeItem>
-
-    public getData = () => this.data
     public getViewData = () => this.viewData
-    private treeData: TreeData = {}
+    private mapData: MapData = {}
 
-    private getShowChildData = (item) => {
-        const mapData = this.treeData[item.level + 1][item.id]
-        const child = []
-        dfsTree(mapData, c => {
-            const {
-                children,
-                ...other
-            } = c
+    private getShowChildData = (item: NodeItem) => {
+        const mapData = this.mapData[item.level + 1][item.id]
+        const child: Array<NodeItem> = []
+        dfsTree(mapData, (c: NodeItem) => {
             if (item.level + 1 == c.level) {
-                child.push(other)
+                child.push(c)
                 if (!c.open) return false
-            } else {
-                child.push(other)
+            }else{
+                child.push(c)
             }
-
         })
         return child
     }
+
     private initViewData = () => {
-        const dataMap = this.treeData['0']
+        const dataMap = this.mapData['0']
         const data = Object.values(dataMap)
-        this.viewData = data[0].map(item => {
-            const {
-                children,
-                ...other
-            } = item
-            return other
-        })
+        this.viewData = data[0].map(item => item)
         for (let i = 0; i < this.viewData.length; i++) {
             const item = this.viewData[i]
-            if (item.open && item.hasChildren) {
+            if (item.open && item.isLeaf) {
                 const child = this.getShowChildData(item)
-                let len = child.length
+                const len = child.length
                 this.viewData.splice(i + 1, 0, ...child)
                 i += len
             }
         }
-        // dfsTree(this.viewData, (item: NodeItem) => {
-        //     if (item.open) {
-        //         item.children = this.treeData[item.level][item.parentId]
-        //     }
-        // })
-
     }
-    private mapData = (data: []) => {
-        const dat = this.treeData
+    private mapDatas = (data: []) => {
+        const dat = this.mapData
         bfTree(data, (item: NodeItem) => {
             const parentId = item.parentId || 'root'
             const level = item.level
             if (!dat[level]) dat[level] = {}
             if (!dat[level][parentId]) dat[level][parentId] = []
             if (item.children) {
-                item.hasChildren = true
+                item.isLeaf = true
+                item.requested= true
             }
             dat[`${level}`][parentId].push(item)
         })
-        this.treeData = dat
+        this.mapData = dat
+    }
+    private initChildData = (parentItem: NodeItem, child: Array<NodeItem> = []) => {
+        return child.map(item => ({
+            ...item,
+            level: parentItem.level + 1
+        }))
+    }
+    private insertChildToViewData = (parentItem: NodeItem, child: Array<NodeItem> = []) => {
+        const index = this.viewData.findIndex(item => item.id === parentItem.id)
+        index > -1 && this.viewData.splice(index + 1, 0, ...child)
+    }
+    private insertChildToMapData = (parentItem: NodeItem, child: Array<NodeItem> = []) => {
+        const childMap = this.mapData[parentItem.level + 1]
+        if (!childMap) {
+            this.mapData[parentItem.level + 1] = {}
+        }
+        this.mapData[parentItem.level + 1][parentItem.id] = child
+    }
+    public insertChild = (parentItem: NodeItem, child: Array<NodeItem> = []) => {
+        parentItem.open = true
+        parentItem.requested = true
+        const newChild = this.initChildData(parentItem, child)
+        parentItem.children= newChild
+        this.insertChildToViewData(parentItem, newChild)
+        this.insertChildToMapData(parentItem, newChild)
+    }
+    public open = (parentItem: NodeItem) => {
+        parentItem.open = true
+        const showChild = this.getShowChildData(parentItem)
+        const index = this.viewData.findIndex(item => item.id === parentItem.id)
+        index > -1 && this.viewData.splice(index+1, 0, ...showChild)
+    }
+    public close = (parentItem: NodeItem) => {
+        parentItem.open = false
+        const closeChild = this.getShowChildData(parentItem)
+        const index = this.viewData.findIndex(item => item.parentId === parentItem.id)
+        index > -1 && this.viewData.splice(index, closeChild.length)
     }
 }

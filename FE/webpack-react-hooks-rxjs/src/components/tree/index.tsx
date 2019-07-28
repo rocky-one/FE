@@ -1,16 +1,22 @@
 import * as React from 'react'
 import HandleTree from './HandleTree'
-import { HandleTreeInterface, TreeData, NodeItem, TransformItem } from './interface'
-import Node from './Node'
+import { HandleTreeInterface, NodeItem, TransformItem } from './interface'
+import Tree from './Tree'
 
 interface TreeProps<T> {
-    data: T[]
+    data: T[],
+    onOpen?: (item: NodeItem) => void,
+    onClose?: (item: NodeItem) => void,
+    loadData?: (item: NodeItem) => Promise<void>,
+    width?: number,
+    height?: number,
+    nodeHeight?: number,
 }
 interface TreeState<T> {
     data: Array<NodeItem>
 }
 
-export default class Tree<T> extends React.Component<TreeProps<T>, TreeState<T>> {
+export default class Treeo<T> extends React.Component<TreeProps<T>, TreeState<T>> {
     constructor(props: TreeProps<T>) {
         super(props)
         this.state = {
@@ -18,25 +24,38 @@ export default class Tree<T> extends React.Component<TreeProps<T>, TreeState<T>>
         }
     }
     handleTree: any
+    treeRef: any
     componentDidMount() {
-        this.handleTree = new HandleTree({
-            data: this.props.data
-        })
-        this.setState({
-            data: this.handleTree.getViewData()
-        })
-    }
-    renderArrow = () => {
         
+    }
+    setTreeRef = (node: any) => {
+        if(!this.treeRef){
+            this.treeRef = node
+            this.setState({})
+        }
     }
     render() {
         const {
             data
         } = this.state
-        return <div className="list">
-            {data.map((item: NodeItem) => <div key={item.id} >
-                <Node item={item} />
-            </div>)}
+
+        const {
+            width,
+            height,
+            nodeHeight = 30,
+        } = this.props
+
+        return <div className="list"
+            style={{
+                width: width ? `${width}px` : 'auto',
+                height: height ? `${height}px` : 'auto',
+                overflow: 'auto',
+            }}
+            ref={this.setTreeRef} >
+            {this.treeRef && <Tree 
+            {...this.props} 
+            treeRef={this.treeRef}
+            />}
         </div>
     }
 }

@@ -14,7 +14,7 @@ interface TreeDataLevel {
     [propName: string]: Array<NodeItem>
 }
 
-export interface TreeData {
+export interface MapData {
     [propName: string]: TreeDataLevel;
 }
 
