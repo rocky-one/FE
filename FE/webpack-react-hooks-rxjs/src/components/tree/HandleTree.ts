@@ -17,7 +17,7 @@ export default class HandleTree implements HandleTreeInterface {
             if (item.level + 1 == c.level) {
                 child.push(c)
                 if (!c.open) return false
-            }else{
+            } else {
                 child.push(c)
             }
         })
@@ -47,7 +47,7 @@ export default class HandleTree implements HandleTreeInterface {
             if (!dat[level][parentId]) dat[level][parentId] = []
             if (item.children) {
                 item.isLeaf = true
-                item.requested= true
+                item.requested = true
             }
             dat[`${level}`][parentId].push(item)
         })
@@ -74,7 +74,7 @@ export default class HandleTree implements HandleTreeInterface {
         parentItem.open = true
         parentItem.requested = true
         const newChild = this.initChildData(parentItem, child)
-        parentItem.children= newChild
+        parentItem.children = newChild
         this.insertChildToViewData(parentItem, newChild)
         this.insertChildToMapData(parentItem, newChild)
     }
@@ -82,7 +82,7 @@ export default class HandleTree implements HandleTreeInterface {
         parentItem.open = true
         const showChild = this.getShowChildData(parentItem)
         const index = this.viewData.findIndex(item => item.id === parentItem.id)
-        index > -1 && this.viewData.splice(index+1, 0, ...showChild)
+        index > -1 && this.viewData.splice(index + 1, 0, ...showChild)
     }
     public close = (parentItem: NodeItem) => {
         parentItem.open = false
@@ -91,3 +91,5 @@ export default class HandleTree implements HandleTreeInterface {
         index > -1 && this.viewData.splice(index, closeChild.length)
     }
 }
+
+
