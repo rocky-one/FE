@@ -91,16 +91,3 @@ export default class HandleTree implements HandleTreeInterface {
         index > -1 && this.viewData.splice(index, closeChild.length)
     }
 }
-
-
-function NewFn() {
-    const obj = new Object()
-    // 取出第一个参数 第一个参数默认是构造函数 
-    const Fn = [].shift.call(arguments)
-    // 修改obj的原型链指向
-    obj.__proto__ = Fn.prototype
-    // 修改Fn构造函数的this指向obj
-    const res = Fn.apply(obj, arguments)
-    // 如果构造函数有返回值 返回构造函数的返回值 否则返回obj 
-    return typeof res === 'object' ? res : obj
-}
