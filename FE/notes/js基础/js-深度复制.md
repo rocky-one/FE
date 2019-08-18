@@ -26,8 +26,8 @@ const obj1 = {
     d: undefined,
 }
 const obj2= cloneDeep(obj1)
-obj.a=100
-console.log(obj,obj2)
+obj1.a = 100
+console.log(obj1,obj2)
 // 打印结果
 // obj1 = {
 //     a: 100,
