@@ -204,3 +204,98 @@ function cloneDeep(source, storageData) {
     const obj3 = cloneDeep(obj2)
     console.log(obj3.a === obj3.a) // true
 ```
+
+- 问题Symbol类型
+Symbol类型不会被for in获取,所以当有Symbol类型是就会被跳过导致丢失.
+
+解决Symbol类型,Object.getOwnPropertySymbols() 方法返回一个给定对象自身的所有 Symbol 属性的数组
+
+```javascript
+let obj = {}
+let s = Symbol("s")
+obj[s] = 123
+let symbols = Object.getOwnPropertySymbols(obj)
+console.log(symbols) // [Symbol(s)]
+
+```
+
+继续完善代码
+```javascript
+function cloneDeep(source, storageData) {
+    if (!source) return source
+    if (!storageData) storageData = []
+    const obj = Array.isArray(source) ? [] : {};
+
+    let hasData = false
+    for (let i = 0; i < storageData.length; i++) {
+        if (storageData[i].source === source) {
+            hasData = storageData[i];
+        }
+    }
+    if (hasData) return hasData.obj;
+    storageData.push({
+        source: source,
+        obj: obj
+    });
+    const symKeys = Object.getOwnPropertySymbols(source)
+    if(symKeys.length){
+        for(let i = 0;i<symKeys.length;i++){
+            const key = symKeys[i]
+            if (typeof source[key] === 'object' && source[key] !== null) {
+                obj[key] = cloneDeep(source[key], storageData)
+            } else {
+                obj[key] = source[key]
+            }
+        }
+    }
+    for (let key in source) {
+        if (source.hasOwnProperty(key)) {
+            if (typeof source[key] === 'object' && source[key] !== null) {
+                obj[key] = cloneDeep(source[key], storageData)
+            } else {
+                obj[key] = source[key]
+            }
+        }
+    }
+    return obj
+}
+```
+
+```javascript
+// 测试一下
+const obj1 = {
+    a: 1,
+    b: {
+        b1: 2
+    },
+    c: null,
+    d: undefined,
+}
+const symA = Symbol("a")
+const symB = Symbol("b")
+obj1[symA] = "aa"
+obj1[symB] = "bb"
+
+const obj2 = cloneDeep(obj1)
+console.log(obj2)
+//打印结果
+// obj2 = {
+//     a: 100,
+//     b: {
+//         b1: 2
+//     },
+//     c: null,
+//     d: undefined,
+//     Symbol(a): "aa",
+//     Symbol(b): "bb"
+// }
+```
+
+至此深度复制基本功能已经实现,总结一下注意的点
+
+1. 对象类型判断问题 null、undefined等情况
+1. 循环引用问题
+2. 引用丢失问题
+3. Symbol类型问题
+
+ 
