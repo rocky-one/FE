@@ -206,7 +206,8 @@ function cloneDeep(source, storageData) {
 ```
 
 - 问题Symbol类型
-Symbol类型不会被for in获取,所以当有Symbol类型是就会被跳过导致丢失.
+
+Symbol类型不会被for in获取,所以当有Symbol类型时会被跳过导致丢失.
 
 解决Symbol类型,Object.getOwnPropertySymbols() 方法返回一个给定对象自身的所有 Symbol 属性的数组
 
