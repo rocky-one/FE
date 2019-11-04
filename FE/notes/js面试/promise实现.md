@@ -113,3 +113,88 @@ ok!这样代码就能正常执行了
 首先思考一下怎么实现这样的调用 promise.then(), 这个很容易想到只要promsie实例上有then方法就可以这样调用
 那么promise.then().then(), 是不是说明promise.then()执行完后then()方法又返回了一个promise实例,这样就能链式调用了,
 好先让then返回一个promise实例
+
+```javascript
+class CopyPromise2 {
+  constructor(fn) {
+    this._value = null
+    this._deferreds = []
+    this.status = 0
+    fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+  }
+  // 让then返回一个promise实例以便于链式调用
+  then = (onFulfilled, onRejected) => {
+    const p = new CopyPromise(() => { })
+    this._deferreds.push({
+      onFulfilled,
+      onRejected
+    })
+    return p
+  }
+}
+```
+
+测试一下链式调用
+
+```javascript
+const p = new CopyPromise((resolve, reject) => {
+  setTimeout(() => {
+    resolve(123)
+  }, 1000)
+})
+p.then((res) => {
+  console.log(res)
+  return res
+}).then(res => {
+  console.log(res)
+})
+```
+我们发现第二个then的回调没有执行,为什么?说好的链式调用那?
+
+正常情况当调resolve的时候会执行then方法的回调,  
+第一个then没问题,因为我们在new CopyPromise回调里执行了resolve,    
+可是第二个then之前并没有调用resolve所以then回调就没有机会执行了, 思考一下这里怎么解决这个问题?
+
+
+这里如果是链式调用需要我们在promise内部手动去调用resolve,  
+修改代码,需要先把之前then方法里的处理逻辑单独拿出去,这样方便后面的调用
+
+```javascript
+class CopyPromise {
+  constructor(fn) {
+    this._value = null
+    this._deferreds = []
+    this.status = 0
+    fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+  }
+  then = (onFulfilled, onRejected) => {
+    const p = new CopyPromise(() => { })
+    handle(this, {
+      onFulfilled,
+      onRejected,
+      promise: p
+    })
+    return p
+  }
+}
+  
+// 单独抽离handle方法,来处理then里面的逻辑
+// 参数说明self是当前promise,deferred是队列里的某一项{onFulfilled,onRejected,promise}
+function handle(self, deferred) {
+  // 首先只有状态是0的时候需要往队列里添加回调
+  if (self.status === 0) {
+    self._deferreds.push(deferred)
+    return
+  }
+  let onFulfilled = deferred.onFulfilled
+  let res
+  if (onFulfilled) {
+    res = onFulfilled(self._value)
+  }
+  // 手动执行resolve, deferred.promise是下一个promise实例, res结果值
+  // resolve里执行的是下一个then的回调, 如果回调队列为空则结束
+  // 可以看到resolve又调了handle方法,如此形成递归也是链式调用的关键
+  resolve(deferred.promise, res)
+
+}
+```
