@@ -198,3 +198,18 @@ function handle(self, deferred) {
 
 }
 ```
+下面测试一下链式调用
+```javascript
+const p = new CopyPromise((resolve, reject) => {
+  setTimeout(() => {
+    resolve(123)
+  }, 1000)
+
+})
+p.then((res) => {
+  console.log(res, '1')
+  return res
+}).then(res => {
+  console.log(res, '2')
+})
+```
