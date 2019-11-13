@@ -3,12 +3,14 @@
 
 ### 第一步基础版 ###
 
-
+先来规定一下状态码 0='PENDING', 1='FULFILLED', 2='REJECTED', 3 = promise
 resolve方法执行的时候说明已结束并且后面then的回调应该开始执行了
 
 ```javascript
 
 function resolve(self, newValue) {
+  // 更改为成功的状态
+  self.status = 1
   self._value = newValue
   self._deferreds.forEach(deferred => {
     deferred.onFulfilled(newValue)
@@ -16,6 +18,8 @@ function resolve(self, newValue) {
 }
 // reject同理
 function reject(self, newValue) {
+  // 更改为失败的状态
+  self.status = 2
   self._value = newValue
   self._deferreds.forEach(deferred => {
     deferred.onRejected(newValue)
@@ -27,6 +31,7 @@ class CopyPromise {
     this._value = null
     // 存放then回调的队列, 包括成功和失败的回调
     this._deferreds = []
+    // 初始的状态是PENDING,当resolve执行后把状态改为2=FULFILLED
     this.status = 0
     // new的时候传过来的fn
     // 把resolve和reject传回给fn
@@ -80,7 +85,7 @@ p.then(res=>{
 对的是这样的 但是此时then还没执行, 我们知道then主要是收集回调等待resolve调用的时候再去执行收集的那些回调方法, 
 这么一来resolve先执行了,等到then收集完了回调, resolve就不会再执行了, 所以导致这里的回调没执行。
 
-2. 怎么解决, 其实只要保证then先于 resolve执行就可以了,这也是Promise规范中规定 onFulfilled, onRejected 要在调用then的事件循环之后执行, 使用一个新的堆栈异步执行。那么依靠事件循环了处理就可以解决这个问题了,通俗一点就是把resolve放到时间循环中(setTimeout),让then有机会先执行去收集回调。
+2. 怎么解决, 其实只要保证then先于 resolve执行就可以了,这也是Promise规范中规定 onFulfilled, onRejected 要在调用then的事件循环之后执行, 使用一个新的堆栈异步执行。那么依靠事件循环了处理就可以解决这个问题了,通俗一点就是把resolve放到事件循环中(例如setTimeout),让then有机会先执行去收集回调。
 
 改造一下代码
 
@@ -106,7 +111,6 @@ ok!这样代码就能正常执行了
 
 
 
-
 ### 第二步then链式调用 ###
 
 
@@ -115,7 +119,7 @@ ok!这样代码就能正常执行了
 好先让then返回一个promise实例
 
 ```javascript
-class CopyPromise2 {
+class CopyPromise {
   constructor(fn) {
     this._value = null
     this._deferreds = []
@@ -156,10 +160,11 @@ p.then((res) => {
 可是第二个then之前并没有调用resolve所以then回调就没有机会执行了, 思考一下这里怎么解决这个问题?
 
 
-这里如果是链式调用需要我们在promise内部手动去调用resolve,  
-修改代码,需要先把之前then方法里的处理逻辑单独拿出去,这样方便后面的调用
+这里如果是链式调用需要我们在promise内部手动去调用resolve,那么在哪里调用这个resolve?
+
 
 ```javascript
+
 class CopyPromise {
   constructor(fn) {
     this._value = null
@@ -169,31 +174,40 @@ class CopyPromise {
   }
   then = (onFulfilled, onRejected) => {
     const p = new CopyPromise(() => { })
-    handle(this, {
-      onFulfilled,
-      onRejected,
-      promise: p
-    })
+    // 首先只有状态是0的时候需要往队列里添加回调
+    if (self.status === 0) {
+      // 这里把新的promise实例也存了起来,为链式调用准备
+      self._deferreds.push({
+        onFulfilled,
+        onRejected,
+        promise: p
+      })
+    }
     return p
   }
 }
-  
-// 单独抽离handle方法,来处理then里面的逻辑
+function resolve(self, newValue) {
+  setTimeout(() => {
+    self._value = newValue
+    self._deferreds.forEach(deferred => {
+      let res = deferred.onFulfilled(newValue)
+      // 这里拿到then里面new的那个promise实例
+      // 再调用resolve，这样形成一个递归调用，就能实现链式调用了
+      // 参数deferred.promise: then里面new的那个promise实例
+      // 参数res: then回调方法里return的值传
+      // 思考一下，调用resolve相当于执行了下一个then收集的队列里的方法，如此链式调用就生效了。
+      resolve(deferred.promise, res)
+    })
+  })
+}
+
+// 单独抽离handle方法,来处理then方法传的回调
 // 参数说明self是当前promise,deferred是队列里的某一项{onFulfilled,onRejected,promise}
 function handle(self, deferred) {
-  // 首先只有状态是0的时候需要往队列里添加回调
-  if (self.status === 0) {
-    self._deferreds.push(deferred)
-    return
-  }
-  let onFulfilled = deferred.onFulfilled
-  let res
-  if (onFulfilled) {
-    res = onFulfilled(self._value)
-  }
-  // 手动执行resolve, deferred.promise是下一个promise实例, res结果值
-  // resolve里执行的是下一个then的回调, 如果回调队列为空则结束
-  // 可以看到resolve又调了handle方法,如此形成递归也是链式调用的关键
+  // 根据当前状态执行不同的回调
+  let cb = self.status === 1 ? deferred.onFulfilled : deferred.onRejected
+  let res = cb(self._value)
+  
   resolve(deferred.promise, res)
 
 }
@@ -213,3 +227,8 @@ p.then((res) => {
   console.log(res, '2')
 })
 ```
+
+
+### 第三部完善状态和错误处理 ###
+
+先来设定一下状态码 0='PENDING', 1='FULFILLED', 2='REJECTED', 3 = promise
