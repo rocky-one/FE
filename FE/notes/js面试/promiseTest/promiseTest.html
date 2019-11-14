@@ -1,0 +1,71 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+	<title></title>
+	<meta charset="utf-8" />
+</head>
+
+<body>
+</body>
+
+</html>
+<script>
+	
+	class CopyPromise {
+		constructor(fn) {
+			this._value = null
+			this._deferreds = []
+			this.status = 0
+			fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+		}
+		then = (onFulfilled, onRejected) => {
+			const p = new CopyPromise(() => { })
+			if (this.status === 0) {
+				this._deferreds.push({
+					onFulfilled,
+					onRejected,
+					promise: p
+				})
+			}
+			return p
+		}
+	}
+	function resolve(self, newValue) {
+		setTimeout(() => {
+			self._value = newValue
+			self._deferreds.forEach(deferred => {
+				let res = deferred.onFulfilled(newValue)
+				resolve(deferred.promise, res)
+			})
+		})
+	}
+	function reject(self, newValue) {
+		setTimeout(() => {
+			self._value = newValue
+			self._deferreds.forEach(deferred => {
+				deferred.onRejected(newValue)
+			})
+		})
+	}
+	function handle(self, deferred) {
+		let cb = self.status === 1 ? deferred.onFulfilled : deferred.onRejected
+		let res = cb(self._value)
+		resolve(deferred.promise, res)
+	}
+
+
+	const p = new CopyPromise((resolve, reject) => {
+		setTimeout(() => {
+			resolve(123)
+		}, 1000)
+
+	})
+	p.then((res) => {
+		console.log(res, '1')
+		return res
+	}).then(res => {
+		console.log(res, '2')
+	})
+
+</script>

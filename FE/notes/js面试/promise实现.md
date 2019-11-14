@@ -175,9 +175,9 @@ class CopyPromise {
   then = (onFulfilled, onRejected) => {
     const p = new CopyPromise(() => { })
     // 首先只有状态是0的时候需要往队列里添加回调
-    if (self.status === 0) {
+    if (this.status === 0) {
       // 这里把新的promise实例也存了起来,为链式调用准备
-      self._deferreds.push({
+      this._deferreds.push({
         onFulfilled,
         onRejected,
         promise: p

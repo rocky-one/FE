@@ -1,0 +1,651 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+	<title></title>
+	<meta charset="utf-8" />
+</head>
+
+<body>
+</body>
+
+</html>
+<script>
+
+	// 第一步: 基础版Promise实现
+	// function resolve(self, newValue) {
+	// 	self._value = newValue
+	// 	self._deferreds.forEach(deferred => {
+	// 		deferred(newValue)
+	// 	})
+	// }
+
+	// function reject(self, newValue) {
+	// 	self._value = newValue
+	// }
+	function handle(self, deferred) {
+		while (self.status === 3) {
+			self = self._value;
+		}
+		if (self.status === 0) {
+			self._deferreds.push(deferred)
+			return
+		}
+		// 根据状态获取要执行的方法
+		// 当调用了reject的时候status=2,取then的第二个参数onRejected回调
+		let cb = self.status === 1 ? deferred.onFulfilled : deferred.onRejected
+		// 1. 当cb为null时说明, 调用了reject
+		// 2. 当cb为null时说明then里没有传回调promise.then().then() 值穿透问题
+		// 第一种情况
+		// 如果self.status=2同时cb为null 说明then的第二个参数没传 也就是onRejected没传 
+		// 那么直接调用reject函数处理异常
+		if (cb === null) {
+			(self.status === 1 ? resolve : reject)(deferred.promise, self._value)
+			return
+		}
+		// let onFulfilled = deferred.onFulfilled
+		let res
+		if (cb) {
+			res = cb(self._value)
+		}
+		// 这里拿到传递过来的下一个promise实例
+		// deferred的下一个promise传到resolve
+		// 相当于主动调用了resolve这样就能保证第二个then回调会执行了
+		// 这里有点饶需要好好思考一下,捋清楚这里then链式调用关键问题也就清晰了
+		resolve(deferred.promise, res)
+	}
+	class CopyPromise {
+		constructor(fn) {
+			// 储存resolve方法传来的data值
+			this._value = null
+			// 储存then回调方法, 因为then里的回调要在resolve()执行的时候才去执行,所以先把它回调存起来
+			this._deferreds = []
+			// 状态值, 0='PENDING', 1='FULFILLED', 2='REJECTED'
+			this.status = 0
+			// 这里把resolve包一层function是为了把this传到resolve方法里
+			fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+		}
+		// 注册回调方法 其实就是先存起来,等着resolve执行的时候再调用
+		// 改造一下 写一个单独的方法处理
+		then = (onFulfilled, onRejected) => {
+			const p = new CopyPromise(() => { })
+			// handle第二个参数传了一个对象,当前成功失败的回调和下一个promise的实例, 保证handle里能拿到下一个实例,
+			// 把下一个实例一直传递下去形成链式调用
+			handle(this, {
+				onFulfilled: onFulfilled || null,
+				onRejected: onRejected || null,
+				promise: p || null
+			})
+			return p
+		}
+		// catch里调用了then把第一个成功的回调传为null
+		// 其实最终都是由handle来处理 下面完善handle方法
+		catch = (onRejected) => {
+			return this.then(null, onRejected)
+		}
+		// 首先无论状态如何finally都会执行, 且finally的回调没有参数
+		// 分析一下 
+		// 有点类似在最后又调了一个then方法,只不过用finally包了一层
+		// this.then回调里的value是当前的value, value没有传到fn()里,也就是finally的回调没有参数
+		// CP.resolve(fn())的目的就是执行finally回调, 然后又调了then这个then的目的是把原来的vulue再返回出去
+		finally = (fn) => {
+			const CP = this.constructor
+			return this.then(
+				(value) => {
+					return CP.resolve(fn()).then(() => value)
+				}, (value) => {
+					return CP.resolve(fn()).then(() => CP.reject(value))
+				}
+			)
+		}
+		static resolve = (value) => {
+			return new CopyPromise(function (resolve, reject) {
+				resolve(value)
+			})
+		}
+		static reject = (value) => {
+			return new CopyPromise(function (resolve, reject) {
+				reject(value)
+			})
+		}
+		static all = (arr) => {
+			let args = Array.prototype.slice.call(arr);
+			// 首先最外层要返回一个promise实例
+			return new CopyPromise((resolve, reject) => {
+				// 还剩几个promise没有完成,用来标记是否结束 只有所有的promise都结束了才能执行resolve
+				let remaining = arr.length
+				function res(index, val) {
+					if (val && typeof val === 'object') {
+						let then = val.then
+						// 传过来的是个promise实例时走此判断
+						if (typeof then === 'function') {
+							// 这里是注册数组中promise then的回调
+							// 因为传过来的promise并没有执行then所有要在此执行一下
+							// 并且保证this是正确的需要call一下,然后传入成功和失败的回调
+							// 成功的回调为什么又调了res自己那?
+							// 原因是如果数组中的promise执行的resolve(promise)方法传的是一个promise实例,
+							// 看示例:
+							// const promise1 = new CopyPromise(resolve => {
+							// 	resolve(new CopyPromise(resolve => {
+							// 		resolve('promse1')
+							// 	}))
+							// })
+							// 那就需要继续执行这个promise等待它的结束, 也就是递归的效果
+							then.call(
+								val,
+								function (val) {
+									res(index, val)
+								},
+								reject
+							)
+							// 这里需要return 因为此时的val是一个promise对象并不是我们想要的值,不能走到'标记1'的位置
+							return
+						}
+					}
+					// 标记1: 走到这里说明resolve()返回了值, 并且这个值不再是promise对象了
+					// 此时把val放到对应的索引位置上就可以了
+					args[index] = val
+					// 同时注意这里要做减法操作,当remaining=0是说明所有的promise都执行完毕
+					if (--remaining === 0) {
+						resolve(args);
+					}
+				}
+				for (let i = 0; i < arr.length; i++) {
+					res(i, arr[i])
+				}
+			})
+		}
+		// 竞争
+		// 哪个快 就把哪个的结果返回
+		static race = (arr) => {
+			return new CopyPromise(resolve => { // 这是外层promise
+				for (var i = 0, len = arr.length; i < len; i++) {
+					// 这里需要理解一下
+					// then先注册完后,等待arr[i]的promise执行,看看哪个先完成
+					// 先完成的那个把队列里的回调执行了,此时外层promise里_deferreds就空了
+					// 等到下一个再完成时 队列已经为空了
+					CopyPromise.resolve(arr[i]).then(resolve);
+				}
+			})
+		}
+	}
+	// 试试
+	// const p = new CopyPromise((resolve, reject) => {
+	// 	setTimeout(() => {
+	// 		resolve({
+	// 			name: 'xiaocici'
+	// 		})
+	// 	}, 1000)
+	// })
+	// p.then(res => {
+	// 	console.log(res)
+	// })
+	// 没问题, 到此基础版的promise已经实现
+
+
+
+
+
+
+
+	// 第二步 是重点,敲黑板,注意了
+
+	// Promise规范中规定 onFulfilled, onRejected 要在调用then的事件循环之后执行, 使用一个新的堆栈异步执行
+	// 这个很容易实现 可以通过宏任务或者微任务实现, 关键是为什么要这样？
+	// 如果不把onFulfilled,onRejected 放到一个新的事件循环里会出现什么情况?
+
+	// 来试试先, 把上面的例子改一下, setTimeout方法删除 看看会发生什么
+	// const p2 = new CopyPromise((resolve, reject) => {
+	// 	resolve({
+	// 		name: 'xiaocici2'
+	// 	})
+	// })
+	// p2.then(res => {
+	// 	console.log(res)
+	// })
+	// 看出来没, then里的回调没执行, 思考一下怎么就不执行了那? 只是把setTimeout方法删除了而已啊。
+	// 真是奇怪了, 狗子怎么看？
+	// 来分析一下代码的执行过程
+	// 1. new CopyPromise传的回调是同步执行的,也就是new的时候就执行,那么resolve是不是也跟着执行了,对的是这样的
+	//    但是此时then还没执行, 我们知道then主要是收集回调等待resolve调用的时候再去执行收集的那些回调方法, 这么一来resolve先执行了,
+	//    等到then收集完了回调, resolve就不会再执行了, 所以导致这里的回调没执行
+	// 2. 怎么解决, 其实只要保证then先于 resolve执行就可以了,那就是事件循环了根据promise规范处理就可以了
+
+	// 修改代码
+	function resolve(self, newValue) {
+		setTimeout(() => {
+			if (newValue instanceof CopyPromise) {
+				self.status = 3
+			} else {
+				self.status = 1
+			}
+			self._value = newValue
+			console.log(self._deferreds,'_deferreds')
+			self._deferreds.forEach(deferred => {
+				handle(self, deferred)
+			})
+			// 清空回调队列
+			self._deferreds = []
+		}, 0)
+
+	}
+
+	function reject(self, newValue) {
+		setTimeout(() => {
+			self.status = 2
+			self._value = newValue
+			self._deferreds.forEach(deferred => {
+				handle(self, deferred)
+			})
+			// 清空回调队列
+			self._deferreds = []
+		}, 0)
+	}
+	// ok 代码正常执行了
+
+
+
+
+
+
+
+	// 第三步 then的链式调用, 如何实现? 这里是重点中的重点, 关键之所在
+
+	// 1. 链式调用的实现
+	// 首先思考一下怎么实现这样的调用 promise.then(), 这个很容易想到promsie实例上有then方法就可以这一调用
+	// 如果这样那 promise.then().then(), 是不是说明promise.then()执行完后then()方法又返回了一个promise实例,这样就能链式调用了
+	// 好 先让then返回一个promise实例
+	class CopyPromise2 {
+		constructor(fn) {
+			this._value = null
+			this._deferreds = []
+			this.status = 0
+			fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+		}
+		// 让then返回一个promise实例
+		then = (onFulfilled, onRejected) => {
+			const p = new CopyPromise(() => { })
+			if (this.status === 0) {
+				this._deferreds.push(onFulfilled)
+			}
+			return p
+		}
+	}
+	// 测试一下链式调用 然而并不是这样就搞定的 下面代码的第二个then并未执行 why?
+	// 正常情况是调resolve的时候执行then方法的回调
+	// 第一个then没问题,因为我们在new CopyPromise回调里执行了resolve
+	// 可是第二个then之前并没有调用resolve所以then回调就没有机会执行了, 思考一下这里怎么解决这个问题?
+
+	// const p3 = new CopyPromise((resolve, reject) => {
+	// 	setTimeout(() => {
+	// 		resolve({
+	// 			name: 'xiaocici2'
+	// 		})
+	// 	}, 1000)
+
+	// })
+	// p3.then((res) => {
+	// 	console.log(res, 'p3_1')
+	// 	return res
+	// }).then(res => {
+	// 	console.log(res, 'p3_2')
+	// })
+
+	// 如何解决第一个then之后链式调用的then回调不执行问题
+	// 这里需要我们手动在代码里去调用,如果是链式调用那么对一个then执行完后需要主动调resolve方法
+	// 修改代码 我们把then方法里的处理逻辑单独拿出去 这样方便后面的调用
+	function handle2(self, deferred) {
+		if (self.status === 0) {
+			self._deferreds.push(deferred)
+			return
+		}
+		let onFulfilled = deferred.onFulfilled
+		let res
+		if (onFulfilled) {
+			res = onFulfilled(self._value)
+		}
+		// 手动执行resolve, deferred.promise是下一个promise实例, res结果值
+		// resolve里执行的是下一个then的回调, 如果回调队列为空则结束
+		// 可以看到resolve又调了handle方法,如此形成递归也是链式调用的关键
+		resolve(deferred.promise, res)
+
+	}
+	class CopyPromise3 {
+		constructor(fn) {
+			this._value = null
+			this._deferreds = []
+			this.status = 0
+			fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+		}
+		// 让then返回一个promise实例
+		then = (onFulfilled, onRejected) => {
+			const p = new CopyPromise(() => { })
+			handle(this, {
+				onFulfilled,
+				onRejected,
+				promise: p
+			})
+			return p
+		}
+	}
+	// 测试一下链式调用
+	// const p4 = new CopyPromise((resolve, reject) => {
+	// 	setTimeout(() => {
+	// 		resolve({
+	// 			name: 'xiaocici2'
+	// 		})
+	// 	}, 1000)
+
+	// })
+	// p4.then((res) => {
+	// 	console.log(res, 'p4_1')
+	// 	return res
+	// }).then(res => {
+	// 	console.log(res, 'p4_2')
+	// })
+	// ok 没问题 到此链式调用已经实现
+	// 这里逻辑需要好好捋清楚 简单回顾一下
+	// 问题关键在于 then方法里我们返回了一个新的promise实例
+	// 同时把这个promise实例传给了handle方法, handle方法里执行的resolve(),其实就是保证链式调用
+
+	// 看下面代码 new的回调里我们执行了一次resolve,并且只有一个then没有链式调用
+	// 但是我们在源码 resolve方法里打印一下会发现执行了两次
+	// 因为第二次调用的是then执行完返回的那个promise实例,发现self._deferreds=[] 程序结束
+	// 如果self._deferreds里有值说明是链式多次调用了那就继续,以递归方式调用
+	// const p5 = new CopyPromise((resolve, reject) => {
+	// 	setTimeout(() => {
+	// 		resolve({
+	// 			name: 'xiaocici2'
+	// 		})
+	// 	}, 1000)
+	// })
+	// p5.then((res) => {
+	// 	console.log(res, 'p5')
+	// 	return res
+	// })
+
+
+
+	// 第四步 完善状态和错误处理
+	// status, 0='PENDING', 1='FULFILLED', 2='REJECTED', 3 = promise
+	// 先看下面代码, 当然此时代码执行完肯定是不对的, 代码中执行了reject同时提供了捕获错误的catch方法
+	// 先简单分析一下然后再修改我们的代码
+	// 执行resolve的时候会把status值改为1, 那么执行reject需要把status值改为2
+	// 当status=2的时候也就是错误的时候并不能执行then的回调,而要直接执行catch里的回调
+	// 开始完善代码 看下面
+	// const p6 = new CopyPromise((resolve, reject) => {
+
+	// 	setTimeout(() => {
+	// 		reject({
+	// 			err: '出错了'
+	// 		})
+	// 	}, 0)
+
+	// })
+	// p6.then((res) => {
+	// 	console.log(res, 'p6_1')
+	// 	return res
+	// }).catch(err => {
+	// 	console.log(err, 'err')
+	// })
+
+	// 完善reject
+	// reject逻辑和resolve是一样的
+	// 唯一一点就是status值更改为2
+	function reject(self, newValue) {
+		setTimeout(() => {
+			self.status = 2
+			self._value = newValue
+			self._deferreds.forEach(deferred => {
+				handle(self, deferred)
+			})
+			// 清空回调队列
+			self._deferreds = []
+		}, 0)
+	}
+	// 完善catch方法
+	class CopyPromise4 {
+		constructor(fn) {
+			this._value = null
+			this._deferreds = []
+			this.status = 0
+			fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+		}
+		then = (onFulfilled, onRejected) => {
+			const p = new CopyPromise(() => { })
+			handle(this, {
+				onFulfilled: onFulfilled || null,
+				onRejected: onRejected || null,
+				promise: p || null
+			})
+			return p
+		}
+		// catch里调用了then把第一个成功的回调传为null
+		// 其实最终都是由handle来处理 下面完善handle方法
+		catch = (onRejected) => {
+			return this.then(null, onRejected)
+		}
+	}
+	// 完善handle方法
+	function handle2(self, deferred) {
+
+		if (self.status === 0) {
+			self._deferreds.push(deferred)
+			return
+		}
+		// 我们知道then(onFulfilled,onRejected) 接受两个参数一个成功回调一个失败回调 平时项目里一般都是只传一个成功回调
+		// 根据状态获取要执行的方法,之前的代码直接获取的deferred.onFulfilled 也就是then的第一个参数(成功回调)
+		// 现在需要根据状态来获取 当调用了reject的时候status=2,取then的第二个参数onRejected回调
+		let cb = self.status === 1 ? deferred.onFulfilled : deferred.onRejected
+		// 如果self.status=2同时cb为null 说明then的第二个参数没传 也就是onRejected没传
+		// 那么直接调用reject函数处理异常 最终相当于执行了catch里的回调
+		// catch方法和then一样都是注册回调,只不过catch注册的是失败的回调,最终都会走到handle方法
+		// handle方法判断是执行resolve还是reject,然后他们各自执行之前收集的回调队列(self._deferreds)里的方法
+		// 失败的话就走了reject, resolve就不会走,也就跳过了之前的then收集的所有回调,直接执行了catch里的回调
+		if (cb === null) {
+			(self._state === 1 ? resolve : reject)(deferred.promise, self._value)
+			// 注意这里要return不能继续往下走了 下面是传了回调参数的情况
+			return
+		}
+		let res
+		if (cb) {
+			res = cb(self._value)
+		}
+		resolve(deferred.promise, res)
+	}
+	// 完善resolve传了一个promise对象的情况
+	// 看代码
+	// const p7 = new CopyPromise(resolve => {
+	// 	// 这里又传了一个promise进去
+	// 	resolve(new CopyPromise(resol => {
+	// 		resol(123)
+	// 	}))
+	// })
+
+	// p7.then(res => {
+	// 	// 打印res是一个promise实例并不是123这个值
+	// 	console.log(res, 333)
+	// })
+	// 完善resolve和handle
+	function resolve2(self, newValue) {
+		setTimeout(() => {
+			if (newValue instanceof CopyPromise) {
+				self.status = 3
+			} else {
+				self.status = 1
+			}
+			self._value = newValue
+			self._deferreds.forEach(deferred => {
+				handle(self, deferred)
+			})
+			// 清空回调队列
+			self._deferreds = []
+		}, 0)
+
+	}
+	function handle2(self, deferred) {
+		// 如果状态是3 说明resolve传了一个promise
+		// 把self的值改为那个promise
+		while (self.status === 3) {
+			self = self._value;
+		}
+		if (self.status === 0) {
+			self._deferreds.push(deferred)
+			return
+		}
+		let cb = self.status === 1 ? deferred.onFulfilled : deferred.onRejected
+		if (cb === null) {
+			(self._state === 1 ? resolve : reject)(deferred.promise, self._value)
+			return
+		}
+		let res
+		if (cb) {
+			res = cb(self._value)
+		}
+		resolve(deferred.promise, res)
+	}
+	// ok 代码正常了
+	// const p8 = new CopyPromise(resolve => {
+	// 	resolve(new CopyPromise(resol => {
+	// 		resol(123)
+	// 	}))
+	// })
+
+	// p8.then(res => {
+	// 	console.log(res, 333)
+	// })
+
+
+	// 第五步 promsie.all 方法实现
+	// promise.all 接受一个数组作为参数,其中数组的每一项都是一个promise对象
+	// 等到所有的promise都执行完毕后把所以有的结果放到一个数组里返回,而且结果的顺序是和数组的顺序一致
+	// 示例
+	// const promise1 = new CopyPromise(resolve => {
+	// 	resolve('promise1')
+	// })
+	// const promise2 = new CopyPromise(resolve => {
+	// 	resolve('promise2')
+	// })
+	// CopyPromise.all([promise1, promise2]).then(res => {
+	// 	// res = ['promise1', 'promise1'] 
+	// 	// 结果的顺序和传过来promise顺序一致
+	// })
+
+	// promise.all实现
+	// promise.all是一个静态方法所以我们不能放到原型上
+	class CopyPromise5 {
+		constructor(fn) {
+			this._value = null
+			this._deferreds = []
+			this.status = 0
+			fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+		}
+		static all = (arr) => {
+			let args = Array.prototype.slice.call(arr);
+			// 首先最外层要返回一个promise实例
+			return new CopyPromise((resolve, reject) => {
+				// 还剩几个promise没有完成,用来标记是否结束 只有所有的promise都结束了才能执行resolve
+				let remaining = arr.length
+				function res(index, val) {
+					if (val && typeof val === 'object') {
+						let then = val.then
+						// 传过来的是个promise实例时走此判断
+						if (typeof then === 'function') {
+							// 这里是注册数组中promise then的回调
+							// 因为传过来的promise并没有执行then所有要在此执行一下
+							// 并且保证this是正确的需要call一下,然后传入成功和失败的回调
+							// 成功的回调为什么又调了res自己那?
+							// 原因是如果数组中的promise执行的resolve(promise)方法传的是一个promise实例,
+							// 看示例:
+							// const promise1 = new CopyPromise(resolve => {
+							// 	resolve(new CopyPromise(resolve => {
+							// 		resolve('promse1')
+							// 	}))
+							// })
+							// 那就需要继续执行这个promise等待它的结束, 也就是递归的效果
+							then.call(
+								val,
+								function (val) {
+									res(index, val)
+								},
+								reject
+							)
+							// 这里需要return 因为此时的val是一个promise对象并不是我们想要的值,不能走到'标记1'的位置
+							return
+						}
+					}
+					// 标记1: 走到这里说明resolve()返回了值, 并且这个值不再是promise对象了
+					// 此时把val放到对应的索引位置上就可以了
+					args[index] = val
+					// 同时注意这里要做减法操作,当remaining=0是说明所有的promise都执行完毕
+					if (--remaining === 0) {
+						resolve(args);
+					}
+				}
+				for (let i = 0; i < arr.length; i++) {
+					res(i, arr[i])
+				}
+			})
+		}
+		then = (onFulfilled, onRejected) => {
+			const p = new CopyPromise(() => { })
+			handle(this, {
+				onFulfilled: onFulfilled || null,
+				onRejected: onRejected || null,
+				promise: p || null
+			})
+			return p
+		}
+		catch = (onRejected) => {
+			return this.then(null, onRejected);
+		}
+	}
+	// 试一下promise.all
+	// const promise11 = new CopyPromise((resolve, reject) => {
+	// 	resolve('err')
+	// })
+	// const promise22 = new CopyPromise(resolve => {
+	// 	resolve('promise22')
+	// })
+	// CopyPromise.all([promise11, promise22]).then(res => {
+	// 	console.log(res)
+	// })
+	// ok promise.all 没有问题
+
+
+	// 第六步 实现promise.race 
+	var promise111 = new CopyPromise(function (resolve, reject) {
+		setTimeout(resolve, 500, 'one');
+	});
+
+	var promise222 = new CopyPromise(function (resolve, reject) {
+		setTimeout(resolve, 100, 'two');
+	});
+
+	CopyPromise.race([promise111, promise222]).then(function (value) {
+		console.log(value, 9999);
+	});
+
+
+	// 第七步 实现promise.finally
+	// finally无论promise状态是成功还是失败,最后都会执行 
+	
+	var promise1111 = new CopyPromise(function (resolve, reject) {
+		setTimeout(resolve, 500, 1212);
+	});
+	promise1111.then(res => {
+		console.log(res, 'ress')
+		return res
+	})
+	promise1111.then(res => {
+		console.log(res, 'res')
+		return res
+	}).then(res=>{
+		return res
+	}).finally(() => {
+		console.log('finally')
+	})
+
+	
+	
+</script>
