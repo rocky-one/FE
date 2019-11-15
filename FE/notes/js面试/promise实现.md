@@ -1,10 +1,17 @@
 ## promise实现 ##
 
+### 说明 ###
+
+本篇文章主要是根据promise-polyfill源码分析promise的实现原理，希望通过通俗的方式把promise的实现梳理清楚，文章内容比较长希望有幸看到此文章的你能够静下心来仔细分析，如果代码有误之处还请指正。promise-polyfill地址：https://github.com/taylorhakes/promise-polyfill/blob/master/src/index.js
 
 ### 第一步基础版 ###
 
-先来规定一下状态码 0='PENDING', 1='FULFILLED', 2='REJECTED', 3 = promise
-resolve方法执行的时候说明已结束并且后面then的回调应该开始执行了
+先来规定一下状态码   
+0='PENDING'     
+1='FULFILLED'  
+2='REJECTED'  
+3 = promise 状态是3的时候说明resolve(promise)传的是个promise对象,后面会详细探讨
+
 
 ```javascript
 
@@ -31,7 +38,7 @@ class CopyPromise {
     this._value = null
     // 存放then回调的队列, 包括成功和失败的回调
     this._deferreds = []
-    // 初始的状态是PENDING,当resolve执行后把状态改为2=FULFILLED
+    // 初始的状态是PENDING,当resolve执行后把状态改为1=FULFILLED
     this.status = 0
     // new的时候传过来的fn
     // 把resolve和reject传回给fn
@@ -116,7 +123,7 @@ ok!这样代码就能正常执行了
 
 首先思考一下怎么实现这样的调用 promise.then(), 这个很容易想到只要promsie实例上有then方法就可以这样调用
 那么promise.then().then(), 是不是说明promise.then()执行完后then()方法又返回了一个promise实例,这样就能链式调用了,
-好先让then返回一个promise实例
+ok,更改代码让then返回一个promise实例
 
 ```javascript
 class CopyPromise {
@@ -180,22 +187,24 @@ class CopyPromise {
       this._deferreds.push({
         onFulfilled,
         onRejected,
-        promise: p
+        promise: p // 这个是新增的
       })
     }
     return p
   }
 }
+// 答案是在resolve方法里调用resolve
 function resolve(self, newValue) {
   setTimeout(() => {
     self._value = newValue
     self._deferreds.forEach(deferred => {
       let res = deferred.onFulfilled(newValue)
-      // 这里拿到then里面new的那个promise实例
-      // 再调用resolve，这样形成一个递归调用，就能实现链式调用了
+      // 看上面then方法里_deferreds队列里新加了一个promise对象，这个对象是then要返回的对象，这里我们要拿到这个promise
+      // 直接把这个promise实例传给resolve，就相当于链式调用时手动调用了resolve方法，那么当resolve执行时第二个then的回调就会执行了
+      // 这样形成一个递归调用，是实现链式调用的关键所在
       // 参数deferred.promise: then里面new的那个promise实例
       // 参数res: then回调方法里return的值传
-      // 思考一下，调用resolve相当于执行了下一个then收集的队列里的方法，如此链式调用就生效了。
+      // 思考一下，调用resolve相当于执行了下一个then收集的队列(deferred.promise._deferreds)里的方法。
       resolve(deferred.promise, res)
     })
   })
