@@ -1,4 +1,4 @@
-## promise实现 ##
+## promise实现原理 ##
 
 ### 说明 ###
 
@@ -6,15 +6,17 @@
 
 ### 第一步基础版 ###
 
-先来规定一下状态码   
-0='PENDING'     
-1='FULFILLED'  
-2='REJECTED'  
-3 = promise 状态是3的时候说明resolve(promise)传的是个promise对象,后面会详细探讨
+先来规定一下状态码： 
+* 0 = 'PENDING'     
+* 1 = 'FULFILLED'  
+* 2 = 'REJECTED'  
+* 3 = promise 状态是3的时候说明resolve(promise)传的是个promise对象,后面会详细探讨
 
 
 ```javascript
-
+// 这里说明一下为什么resolve和reject方法单独放到了外面，而不是放到了CopyPromise里面
+//1. 原生的promise的实例上没有resolve这个方法，为了和promis保持
+//2. 原生的pormise有个静态属性Promise.resolve， 为了不产生一些歧义
 function resolve(self, newValue) {
   // 更改为成功的状态
   self.status = 1
@@ -60,27 +62,25 @@ class CopyPromise {
 ```
 测试一下, ok执行下面的代码, 貌似是好的
 ```javascript
-	const p = new CopyPromise(resolve=>{
-		setTimeout(()=>{
-			resolve(123)
-		},500)
-	})
-
-	p.then(res=>{
-		console.log(res,'res')
-	})
+const p = new CopyPromise(resolve=>{
+    setTimeout(()=>{
+        resolve(123)
+    },500)
+})
+p.then(res=>{
+    console.log(res,'res')
+})
 
 ```
 但是其实有个问题,下面我们来修改一下代码再看效果
 
 ```javascript
 const p = new CopyPromise(resolve=>{
-  // 把之前这里的setTimeout删除了
-	resolve(123)
+    // 把之前这里的setTimeout删除了
+    resolve(123)
 })
-
 p.then(res=>{
-	console.log(res,'res')
+    console.log(res,'res')
 })
 ```
 上述代码的结果是then的回调没有执行。这是什么情况把setTimeout去了代码就不执行了?  
@@ -98,6 +98,7 @@ p.then(res=>{
 
 ```javascript
 function resolve(self, newValue) {
+//添加一个setTimeout
   setTimeout(() => {
     self._value = newValue
     self._deferreds.forEach(deferred => {
@@ -106,6 +107,7 @@ function resolve(self, newValue) {
   })
 }
 function reject(self, newValue) {
+//添加一个setTimeout
   setTimeout(() => {
     self._value = newValue
     self._deferreds.forEach(deferred => {
@@ -185,8 +187,8 @@ class CopyPromise {
     if (this.status === 0) {
       // 这里把新的promise实例也存了起来,为链式调用准备
       this._deferreds.push({
-        onFulfilled,
-        onRejected,
+        onFulfilled: onFulfilled || null,
+        onRejected: onRejected || null,
         promise: p // 这个是新增的
       })
     }
@@ -210,17 +212,8 @@ function resolve(self, newValue) {
   })
 }
 
-// 单独抽离handle方法,来处理then方法传的回调
-// 参数说明self是当前promise,deferred是队列里的某一项{onFulfilled,onRejected,promise}
-function handle(self, deferred) {
-  // 根据当前状态执行不同的回调
-  let cb = self.status === 1 ? deferred.onFulfilled : deferred.onRejected
-  let res = cb(self._value)
-  
-  resolve(deferred.promise, res)
-
-}
 ```
+
 下面测试一下链式调用
 ```javascript
 const p = new CopyPromise((resolve, reject) => {
@@ -236,8 +229,444 @@ p.then((res) => {
   console.log(res, '2')
 })
 ```
+到此链式调用的原理我们已经知道了，但是我们去看promise-polyfill的源码和我们所实现的链式调用有点不同，promise-polyfill是把逻辑单独放到了handle方法里处理了，既然我们是根据promise-polyfill来解析promise的原理那我们也把代码改造一下。
 
 
-### 第三部完善状态和错误处理 ###
+```javascript
+// 单独抽离handle方法
+// 参数说明self是当前promise,deferred是队列里的某一项{onFulfilled,onRejected,promise}
+// 之前我们的链式调用只处理了成功状态的情况，下面我们一起把失败的逻辑也加进来
+function handle(self, deferred) {
+  //1. 把then里面收集回调的逻辑拿过来，这里只有状态是0的情况才能往队列里添加，其他情况就要执行成功或者失败的回调了
+  if (self.status === 0) {
+    self._deferreds.push(deferred)
+    return
+  }
 
-先来设定一下状态码 0='PENDING', 1='FULFILLED', 2='REJECTED', 3 = promise
+  // 根据当前状态执行不同的回调
+  let cb = self.status === 1 ? deferred.onFulfilled : deferred.onRejected
+  // 注意这里cb有可能为null，例如：p.then().then()，如果then里面没有传回调那就是null，null是在then方法里我们给赋的一个值
+  // 如果没有传回调那么我们就调用resolve或者reject，这样才能链式一个一个执行then
+  if(cb === null){
+    (self.status === 1 ? resolve : reject)(deferred.promise, self._value)
+    // 注意这里要return，因为代码再往下执行是then里传了回调的情况
+    return
+  }
+  // 如果then里传了回调
+  let res = cb(self._value)
+  // 再次执行resolve 保证链式调用
+  resolve(deferred.promise, res)
+}
+// 改造CopyPromise
+class CopyPromise {
+  constructor(fn) {
+    this._value = null
+    this._deferreds = []
+    this.status = 0
+    fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+  }
+  then = (onFulfilled, onRejected) => {
+    const p = new CopyPromise(() => { })
+    // 把原来逻辑替换成handle处理
+    handle(this,{
+      onFulfilled: onFulfilled || null,
+      onRejected: onRejected || null,
+      promise: p
+    })
+    return p
+  }
+}
+// 改造resolve方法
+// 因为处理的逻辑我们都放到了handle里了，所以这里的resolve里面应该调用handle
+function resolve(self, newValue) {
+  setTimeout(() => {
+    self.status = 1
+    self._value = newValue
+    self._deferreds.forEach(deferred => {
+      // 之前这里只是执行了deferred.onFulfilled  也就是成功回调，因为then接收两个回调一个成功一个失败，现在用handle替换这里
+      // let res = deferred.onFulfilled(newValue)
+      // resolve(deferred.promise, res)
+      handle(self, deferred)
+    })
+    // 清空队列
+    self._deferreds = []
+  })
+}
+// 改造reject 方法
+function reject(self, newValue) {
+  setTimeout(() => {
+    self.status = 2
+    self._value = newValue
+    self._deferreds.forEach(deferred => {
+      handle(self, deferred)
+    })
+    // 清空队列
+    self._deferreds = []
+  }, 0)
+}
+```
+下面再测试一下链式调用
+
+```javascript
+const p = new CopyPromise((resolve, reject) => {
+  setTimeout(() => {
+    resolve(123)
+  }, 1000)
+})
+p.then((res) => {
+  console.log(res, '1')
+  return res
+}).then(res => {
+  console.log(res, '2')
+})
+
+```
+链式调用没有问题，不过还存在一个问题没有解决，看下面代码
+
+```javascript
+const p = new CopyPromise((resolve, reject) => {
+  setTimeout(() => {
+    // 我们在resolve里new了一个promise，传给了resolve
+    resolve(new CopyPromise((resolve,reject) =>{
+      resolve(123)
+    }))
+  }, 1000)
+})
+// 此时我们打印出来的值并不是123，而是一个promise实例，也就是说此时实例上的_value值变成了一个promise对象
+p.then((res) => {
+  console.log(res, '1')
+  return res
+}).then(res => {
+  console.log(res, '2')
+})
+```
+所以说当给resolve传了一个promise对象时我们应该怎么办?  
+首先我们给status增加一个状态 status=3的情况，说明resolve传过来了一个promise实例
+改造代码 
+```javascript
+
+function resolve(self, newValue) {
+  setTimeout(() => {
+    // 增加一个判断，如果传过来的值是一个promise实例把状态改为3
+    if (newValue instanceof CopyPromise) {
+      self.status = 3
+    } else {
+      self.status = 1
+    }
+    self._value = newValue
+    self._deferreds.forEach(deferred => {
+      handle(self, deferred)
+    })
+    self._deferreds = []
+  })
+}
+
+function handle(self, deferred) {
+  // 如果状态是3，我们把当前self这个promise实例更改为 resolve传过来的那个promise实例
+  // 然后通过最后一个resolve拿到真实的值123
+  // 这里为什么要用while循环，因为resolve里可以嵌套多层的promise，例如下面注释的代码resolve里嵌套了两层
+  /**
+ * new CopyPromise((resolve, reject) => {
+	setTimeout(() => {
+		resolve(new CopyPromise((resolve, reject) => {
+			resolve(new CopyPromise((resolve, reject) => {
+				resolve(123)
+			}))
+		}))
+	}, 1000)
+    })
+ */
+  // 所以要用while 直到最后一层的resolve(123)，这里的值才是我们需要的
+  while (self.status === 3) {
+    self = self._value;
+  }
+
+  if (self.status === 0) {
+    self._deferreds.push(deferred)
+    return
+  }
+  let cb = self.status === 1 ? deferred.onFulfilled : deferred.onRejected
+  if(cb === null){
+    (self.status === 1 ? resolve : reject)(deferred.promise, self._value)
+		return
+  }
+  let res = cb(self._value)
+  resolve(deferred.promise, res)
+}
+```
+ok，到此promise的链式调用的原理已经梳理完毕，有些地方需要好好思考一下，如果你看到这里对链式调用还有疑问可以返回去再看几遍，有些关键的知识点需要琢磨一下为什么这样，或者你可以再去查阅一些其他资料，每个人的表达不一样，或者有更符合你逻辑思维的文章，建议先把then的链式调用掌握了之后再继续往下阅读。
+
+
+### 第三步完善promise其他方法 ###
+
+#### catch方法 ####
+
+```javascript
+class CopyPromise {
+  constructor(fn) {
+    this._value = null
+    this._deferreds = []
+    this.status = 0
+    fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+  }
+  then = (onFulfilled, onRejected) => {
+    const p = new CopyPromise(() => { })
+    handle(this,{
+      onFulfilled: onFulfilled || null,
+      onRejected: onRejected || null,
+      promise: p
+    })
+    return p
+  }
+  // catch方法相当于调用reject方法
+  // catch里调用了then把第一个成功的回调传为null, 第二个处理错误的回调onRejected
+  catch = (onRejected) => {
+    return this.then(null, onRejected)
+  }
+}
+```
+
+测试一下catch
+```javascript
+const p = new CopyPromise((resolve, reject) => {
+  setTimeout(() => {
+    reject('出错了')
+  }, 1000)
+
+})
+p.then((res) => {
+  console.log(res)
+  return res
+}).catch(err => {
+  // 打印出错误 
+  console.log(err)
+})
+```
+
+#### Promise.all方法 ####
+
+```javascript
+class CopyPromise {
+  constructor(fn) {
+    this._value = null
+    this._deferreds = []
+    this.status = 0
+    fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+  }
+  // ... 省略其他代码
+
+
+  static all = (arr) => {
+    let args = Array.prototype.slice.call(arr);
+    // 首先最外层要返回一个promise实例，以便于链式调用
+    return new CopyPromise((resolve, reject) => {
+      // 首先需要循环传过来的数组，这里相当于是并发执行的
+      for (let i = 0; i < arr.length; i++) {
+        res(i, arr[i])
+      }
+      // 还剩几个promise没有完成,用来标记是否结束 只有所有的promise都结束了才能执行resolve
+      let remaining = arr.length
+      // 处理每一个promise的方法
+      function res(index, val) {
+        // 传过来的是个promise实例时走此判断
+        if (val && typeof val === 'object') {
+          let then = val.then
+          if (typeof then === 'function') {
+            // 为什么要在这里调用then？
+            // 因为传过来的promise里有可能又嵌套了promise，这里和上面我们写链式调用那里状态是3的时候循环取值是相同的原理
+            // const promise1 = new CopyPromise(resolve => {
+            // 	resolve(new CopyPromise(resolve => {
+            // 		resolve('promse1')
+            // 	}))
+            // })
+            // 那就需要继续执行嵌套的promise等待它的结束, 也就是递归的效果
+            then.call(
+              val,
+              function (val) {
+                res(index, val)
+              },
+              reject
+            )
+            // 这里需要return 因为此时的val是一个promise对象并不是我们想要的值,代码不能继续往下执行了
+            return
+          }
+        }
+        // 走到这里说明resolve()返回了值, 并且这个值不再是promise对象了
+        // 此时把val放到对应的索引位置上就可以了
+        args[index] = val
+        // 同时注意这里要做减法操作,当remaining=0是说明所有的promise都执行完毕
+        if (--remaining === 0) {
+          resolve(args);
+        }
+      }
+    })
+  }
+}
+```
+
+测试一下promise.all
+
+```javascript
+const p1 = new CopyPromise((resolve, reject) => {
+  setTimeout(() => {
+    resolve(1)
+  }, 200)
+})
+const p2 = new CopyPromise((resolve, reject) => {
+  setTimeout(() => {
+    resolve(2)
+  }, 300)
+})
+const p3 = new CopyPromise((resolve, reject) => {
+  setTimeout(() => {
+    resolve(3)
+  }, 400)
+})
+// 结果[1, 2, 3] 
+CopyPromise.all([p1,p2,p3]).then(res=>{
+  console.log(res)
+})
+```
+
+#### promise.resolve 和 promie.reject方法 ####
+
+这两个方法相对简单主要是调用了我们写好的resolve，reject方法
+
+```javascript
+class CopyPromise {
+  constructor(fn) {
+    this._value = null
+    this._deferreds = []
+    this.status = 0
+    fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+  }
+  // ... 省略其他代码
+
+  static resolve = (value) => {
+    return new CopyPromise(function (resolve, reject) {
+      resolve(value)
+    })
+  }
+  static reject = (value) => {
+    return new CopyPromise(function (resolve, reject) {
+      reject(value)
+    })
+  }
+}
+```
+
+#### promise.race方法 ####
+
+```javascript
+class CopyPromise {
+  constructor(fn) {
+    this._value = null
+    this._deferreds = []
+    this.status = 0
+    fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+  }
+  // ... 省略其他代码
+
+  // 竞争
+  // 哪个快 就把哪个的结果返回
+  static race = (arr) => {
+    // 这是外层promise 便于链式调用
+    return new CopyPromise(resolve => { 
+      for (var i = 0, len = arr.length; i < len; i++) {
+        // 依次调用CopyPromise.resolve, 当然也可以手动new CopyPromise，这里因为有之前写好的方法所以直接拿过来用
+        // 然后关键的是怎么让先执行完的那个promise，执行完后，后面的promise就不会再执行了
+        // 例如： [promsie1, promise2, promise3]， 数组里有三项，如果现在promise2先执行完了
+        // 此时代码会走到then，看一下then传的参数，是我们外层那个promise的resolve，
+        // 当这个resolve执行完后外层的实例上的状态会被改为1=成功(或者2=失败)，同时外层promise里_deferreds被清空整个过程结束
+        // 注意一点这个外部的_deferreds是在我们实际调用race的时候，例如CopyPromise.race([p1,p2]).then((res)=>{})，这里的then会收集回调到_deferreds队列里。
+        // 那么当[promsie1, promise2, promise3], promise3又执行完成时此时依然走then传的resolve，
+        // 此时外层那个promise实例的状态是成功的，_deferreds已经被清空了，所以看我们的resolve源码forEach循环不会再走，handle不会再执行
+        CopyPromise.resolve(arr[i]).then(resolve);
+      }
+    })
+  }
+}
+```
+测试一下prmise.race
+```javascript
+const p1 = new CopyPromise((resolve, reject) => {
+    setTimeout(() => {
+        resolve(1)
+    }, 200)
+})
+const p2 = new CopyPromise((resolve, reject) => {
+    setTimeout(() => {
+	resolve(2)
+    }, 300)
+})
+const p3 = new CopyPromise((resolve, reject) => {
+    setTimeout(() => {
+	resolve(3)
+    }, 100)
+})
+CopyPromise.race([p1, p2, p3]).then(res => {
+    // 打印出3 正确
+    console.log(res)
+})
+```
+
+#### promise.finally方法 ####
+
+```javascript
+class CopyPromise {
+  constructor(fn) {
+    this._value = null
+    this._deferreds = []
+    this.status = 0
+    fn((newValue) => resolve(this, newValue), (newValue) => reject(this, newValue))
+  }
+  // ... 省略其他代码
+
+  // 首先无论状态如何finally都会执行, 且finally的回调没有参数
+  // 有点类似在最后又调了一个then方法,只不过用finally包了一层
+  // this.then回调里的value是当前的value, value没有传到fn()里,也就是finally的回调没有参数
+  // CP.resolve(fn())的目的就是执行finally回调, 然后又调了then 这个then的目的是把原来的vulue再返回出去
+  // 例如：这样调用，再finally后面又调用了then 这样保证then里能拿到值
+  // p1.then(res=>{
+	// 	console.log(res)
+	// }).finally(()=>{
+	// 	console.log('finally')
+	// }).then(res=>{
+	// 	console.log(res)
+  // })
+  // 但是原生的promise如果这么调用最后那个then里打印出来的是undefined，也就是说我们可以改成return CP.resolve(fn())就完事了
+  // 这里我们和 promise-polyfill 保持一致
+  finally = (callback) => {
+    // 为什么要用constructor，resolve是静态方法，我们知道静态方法不能通过this.resolve获取
+    // 一般都是 构造函数名.方法名 的方式获取
+    const constructor = this.constructor
+    return this.then(
+      (value) => {
+        return constructor.resolve(callback()).then(() => value)
+      }, (value) => {
+        return constructor.resolve(callback()).then(() => constructor.reject(value))
+      }
+    )
+  }
+}
+```
+
+测试一下promise.finally
+
+```javascript
+const p1 = new CopyPromise(function (resolve, reject) {
+    setTimeout(resolve, 500, 123);
+});
+p1.then(res => {
+    console.log(res)
+    return res
+})
+p1.then(res => {
+    console.log(res)
+    return res
+}).finally(() => {
+    console.log('finally')
+})
+```
+
+至此promise基本的实现原理已经讲完，当然还有很多可以优化的点，其他细节方面大家可以参考https://github.com/taylorhakes/promise-polyfill/blob/master/src/index.js，本篇文章主要根据promise-polyfill源码把promise实现原理讲清楚希望能帮助你更好的理解promise。

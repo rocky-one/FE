@@ -220,7 +220,7 @@
 				self.status = 1
 			}
 			self._value = newValue
-			console.log(self._deferreds,'_deferreds')
+			console.log(self._deferreds, '_deferreds')
 			self._deferreds.forEach(deferred => {
 				handle(self, deferred)
 			})
@@ -229,6 +229,9 @@
 		}, 0)
 
 	}
+
+	
+
 
 	function reject(self, newValue) {
 		setTimeout(() => {
@@ -629,23 +632,21 @@
 
 	// 第七步 实现promise.finally
 	// finally无论promise状态是成功还是失败,最后都会执行 
-	
-	var promise1111 = new CopyPromise(function (resolve, reject) {
-		setTimeout(resolve, 500, 1212);
+
+	const p1 = new CopyPromise(function (resolve, reject) {
+		setTimeout(resolve, 500, 123);
 	});
-	promise1111.then(res => {
-		console.log(res, 'ress')
+	p1.then(res => {
+		console.log(res)
 		return res
 	})
-	promise1111.then(res => {
-		console.log(res, 'res')
-		return res
-	}).then(res=>{
+	p1.then(res => {
+		console.log(res)
 		return res
 	}).finally(() => {
 		console.log('finally')
 	})
 
-	
-	
+
+
 </script>
