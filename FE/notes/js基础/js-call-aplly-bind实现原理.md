@@ -92,3 +92,28 @@ apply的实现和call一致只是参数问题
     fn.apply2(obj, [3])
     console.log(obj.a) // 4
 ```
+
+
+#### bind实现
+```javascript
+Function.prototype.bind = function () {
+    // arguments是一个类数组 转换为数组, 此时参数是调用bind是传的参数
+    let args = [].slice.call(arguments)
+    let context = args.shift()
+    let that = this
+    return function () {
+        // 此时参数是bind之后返回函数里传的参数
+        let newArgs = args.concat([].slice.call(arguments))
+        that.apply(context, newArgs)
+    }
+}
+
+const obj = {
+    name: '哈哈'
+}
+const sayName = function () {
+    console.log(this.name, arguments);
+}
+var sayNameFn = sayName.bind(obj, 1, 2, 3);
+sayNameFn();
+```

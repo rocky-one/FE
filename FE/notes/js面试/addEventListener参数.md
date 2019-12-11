@@ -15,3 +15,8 @@ options = {
   passive: true, // 为ture时,listener不会调用prenventDefault()
 }
 ```
+
+#### 阻止冒泡的方法(扩展)
+1. event.stopPropagation()
+2. return false; 阻止冒泡同时阻止默认行为
+
