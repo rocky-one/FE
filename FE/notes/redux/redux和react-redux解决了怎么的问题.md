@@ -3,6 +3,7 @@
 ### redux解决了什么问题
 1. 数据存储共享.所有的数据都存到一个对象上.
 2. 统一了数据处理的方式,让state的变化可预测.state是只读需要通过触发dispatch(action)来修改,保证了修改状态的一致性和可预测性,就是一个数据的修改从哪里来(触发)到哪里去(修改)最终都会反映到state整个树上.
+3. 内部维护了一套发布订阅机制,通过订阅把回调储存起来,在外边调用发布方法时执行订阅的回调,回调中可以是render等任何操作.如此来解耦store与UI层,所以redux可以用在react也可以用在vue或者node中.
 
 ### redux实现原理分析
 主要看一下redux的核心方法createStore,这个方法就是创建一个store树,然后返回一些可供外部调用的方法.
@@ -77,5 +78,5 @@ store.dispatch({ type: 'DECREMENT' })
 
 ### react-redux解决了什么问题
 
-1. 将组件和redux的store连接,数据注入组件,使数据共享.redux对接的不一定是react可能是其他框架,react-redux用来把react和redux连接起来
-2. 注册监听者subscrible(listener),当store发生变化时更新UI视图.这里通过高阶组件去判断当前组件是否需要render
+1. 将组件和redux的store连接,数据注入组件,使数据共享.redux对接的不一定是react可能是其他框架,react-redux用来把react和redux连接起来.
+2. 注册监听者subscrible(listener),当store发生变化时更新UI视图.这里通过高阶组件去判断当前组件是否需要render.
