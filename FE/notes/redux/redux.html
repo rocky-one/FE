@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ii</title>
+</head>
+<style>
+</style>
+<body>
+</body>
+</html>
+<script>
+// reducer是所有的reducer方法
+function createStore(reducer){
+    const store = {}
+    store.listeners = []
+    // 订阅, 这里的listener相当于一个回调 外部去调用这个subscribe把所有的回调储存起来
+    // 等到dispatch的时候再来执行这些所有的回调,回调可以处理render等
+    // react-redux里的回调就是用来setState让组件重新render的
+    store.subscribe = (listener) => {
+        store.listeners.push(listener)
+    }
+
+    store.dispatch = (action) => {
+        // 执行所有的reducer方法, 根据action匹配更新state
+        store.state = reducer(store.state, action)
+        // 然后执行刚刚储存的listeners回调 
+        // 注意这里是执行了所有的回调的逻辑,只有store中的任何值变化 所有的回调都会执行一遍
+        // react-redux里的回调执行会导致setState让组件重新render,所以这里需要优化判断是否需要render
+        store.listeners.forEach(listener => listener());
+    }
+
+    store.getState = () => {
+        return store.state
+    }
+
+    return store
+}
+
+// reducer
+function counter(state = 0, action) {
+  switch (action.type) {
+  case 'INCREMENT':
+    return state + 1
+  case 'DECREMENT':
+    return state - 1
+  default:
+    return state
+  }
+}
+
+let store = createStore(counter)
+
+store.subscribe(() =>
+  console.log(store.getState())
+)
+
+store.dispatch({ type: 'INCREMENT' })
+// 1
+store.dispatch({ type: 'INCREMENT' })
+// 2
+store.dispatch({ type: 'DECREMENT' })
+// 1
+</script>
