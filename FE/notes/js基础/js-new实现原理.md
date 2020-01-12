@@ -53,3 +53,22 @@
 	    return this.name
 	}
 	NewFn(fn, 'rocky')
+
+
+构造函数中有return的情况
+
+	function Fo(){
+		this.name="rocky";
+		return {}
+	}
+	const fo1 = new Fo()
+	console.log(fo1.name) // undefined
+
+	function Fo(){
+		this.name="rocky";
+		return 1
+	}
+	const fo1 = new Fo()
+	console.log(fo1.name) // rocky
+
+当构造函数中return了一个对象时实例的this就执行这个对象，当return的不是对象时实例的this还是执行本来的实例。

@@ -67,6 +67,8 @@ Brendan Eich(javascript创始人)给出了解释,函数提升为了解决递归�
   - Global 全局代码
   - Fuction 函数内部代码
   - Eval eval内部代码
+  
+  一个上下文包括: 变量对象、作用域链、this
 
 **Execution Context Stack: 函数执行环境栈**
 
