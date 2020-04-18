@@ -110,6 +110,10 @@ this.a=2赋值的时候需要执行刷新视图的方法，那么负责刷新视
 	            Object.defineProperty(data, key, {
 	                enumerable: true,
 	                get() {
+						// 这里就是依赖收集
+						// 就是那个组件依赖了data的那个字段
+						// 当模板中<div>{{data.list}}</div> 取值是就会触发get
+						// 然后添加到观察队列中，等到set的时候执行
 	                    Dep.target && dep.addSub(Dep.target)
 	                    return value;
 	                },

@@ -35,6 +35,7 @@ class Watcher {
         list.forEach(k => {
             data = data[k]
         });
+        // 刷新视图
         this.fn(data);
     }
 }
@@ -79,6 +80,7 @@ class Observe {
             Object.defineProperty(data, key, {
                 enumerable: true,
                 get() {
+                    // 依赖收集
                     Dep.target && dep.addSub(Dep.target)
                     return value;
                 },
