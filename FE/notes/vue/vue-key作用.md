@@ -24,3 +24,32 @@ VueComponent.prototype.$options = {
 }
 ```
 
+* vue-html会导致什么问题
+1. xss攻击
+
+```javascript
+<input type="text" v-mode="value">
+<div v-html="value"></div>
+
+export default {
+  data() {
+    return {
+      value: ""
+    }
+  }
+}
+```
+
+* vue父子组件嵌套时渲染顺序
+1. 父beforeCreate => 父created => 父beforeMount => 子beforeCreate => 子created => 子beforeMount => 子mounted => 父mounted
+* 子组件更新
+1. 父beforeUpdate => 子beforeUpdate => 子updated => 父updated 
+
+* 插槽和作用域插槽
+
+* 优化
+1. 数据不要都放data，减少setter，getter的绑定，可以object.freeze冻结这样就劫持不了了。
+2. 拆分代码，尽量细粒度，这样能精确定位到哪个组件是否要render
+3. 异步加载组件
+4. 虚拟滚动优化
+
