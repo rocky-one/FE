@@ -18,7 +18,7 @@ componentDidMount () {
   }
 ```
 
-* 逻辑共享，把公用的业务逻辑封装成hooks。
+* 逻辑共享，消除了react原来高阶组件嵌套的问题，把公用的业务逻辑封装成hooks。
 ```javascript
 function useGetList (id) {
   const [ list, setList ] = React.useState([])
