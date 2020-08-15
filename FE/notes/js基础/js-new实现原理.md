@@ -28,7 +28,7 @@
 
 下面开始实行一个方法
 
-
+```javascript
 	function NewFn() {
 
 	    const obj = new Object()
@@ -55,7 +55,7 @@
 	NewFn(fn, 'rocky')
 
 
-构造函数中有return的情况
+// 构造函数中有return的情况
 
 	function Fo(){
 		this.name="rocky";
@@ -71,4 +71,5 @@
 	const fo1 = new Fo()
 	console.log(fo1.name) // rocky
 
-当构造函数中return了一个对象时实例的this就执行这个对象，当return的不是对象时实例的this还是执行本来的实例。
+// 当构造函数中return了一个对象时实例的this就执行这个对象，当return的不是对象时实例的this还是执行本来的实例。
+```
