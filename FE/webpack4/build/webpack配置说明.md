@@ -35,4 +35,10 @@ css中图片路径结果: url = '/dist' + loader配置的文件的路径(images/
 
 - DllReferencePlugin 配置中引入DllPlugin打包好的文件
 
-- purify-css purifycss-webpack 去除无用css 
+- purify-css purifycss-webpack 去除无用css
+
+- html-withimg-loader 处理html中引用图片打包问题
+
+- file-loader 处理文件 css中的图片 js中的引入图片
+
+- url-loader 处理文件 对图片大小限制 例如小于100k按照base64处理

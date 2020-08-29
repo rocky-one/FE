@@ -3,6 +3,7 @@
 * 在做diff对比时用，主要是dom复用
 例如不给key或者把索引当作key
 ```javascript
+// 注意此demo只是示意，需要每个节点有自己的状态
 <div key="0">a</div>
 <div key="1">b</div>
 <div key="2">c</div>
@@ -10,7 +11,7 @@
 <div key="0">a</div>
 <div key="1">b</div>
 ```
-因为在做diff对比时发现0，1的可以是一样的，就复用节点，最后一个key不一样就把最后一个c节点删除了
+因为在做diff对比时发现0，1的标签是一样的，就复用节点，最后一个key不一样就把最后一个c节点删除了
 
 
 * vue中data为什么是一个函数
