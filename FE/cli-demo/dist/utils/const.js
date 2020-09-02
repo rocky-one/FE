@@ -7,4 +7,4 @@ exports.VERSION = undefined;
 
 var _package = require('../../package.json');
 
-const VERSION = exports.VERSION = _package.version;
+var VERSION = exports.VERSION = _package.version;

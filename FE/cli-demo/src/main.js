@@ -29,7 +29,6 @@ const actionMap = {
     }
 }
 const projectName = process.argv[3] || 'app'
-console.log(process.argv, projectName, 9)
 
 program.command(`create ${projectName}`)
     .description('create one app!')
@@ -46,7 +45,6 @@ program.command(`create ${projectName}`)
                 choices: ['react', 'vue']
             }
         ]).then(answers => {
-            console.log(answers, 9)
             initTemplate(answers, projectName)
         })
     })

@@ -18,20 +18,23 @@ var _downloadGitRepo2 = _interopRequireDefault(_downloadGitRepo);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const spinner = (0, _ora2.default)('init...');
+var spinner = (0, _ora2.default)('init...');
 
-const templateUrl = {
+var templateUrl = {
     react: 'https://github.com:rocky-one/react-scaffold#master',
     vue: 'https://github.com:rocky-one/react-scaffold#master'
 };
 function initTemplate(answers, projectName) {
-    const { template, description } = answers;
+    var template = answers.template,
+        _answers$description = answers.description,
+        description = _answers$description === undefined ? '' : _answers$description;
+
     spinner.start();
-    (0, _downloadGitRepo2.default)(templateUrl[template], projectName, { clone: true }, err => {
-        const packagePath = `${process.cwd()}/${projectName}/package.json`;
-        const packageContent = JSON.parse(_fs2.default.readFileSync(packagePath), 'utf8');
+    (0, _downloadGitRepo2.default)(templateUrl[template], projectName, { clone: true }, function (err) {
+        var packagePath = process.cwd() + '/' + projectName + '/package.json';
+        var packageContent = JSON.parse(_fs2.default.readFileSync(packagePath), 'utf8');
         packageContent.name = projectName;
-        packageContent.description = description;
+        // packageContent.description = description
         _fs2.default.writeFileSync(packagePath, JSON.stringify(packageContent, null, 2));
         console.log(err ? err : '\r\n success');
         spinner.stop();

@@ -24,7 +24,7 @@ var _initTemplate2 = _interopRequireDefault(_initTemplate);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const actionMap = {
+var actionMap = {
     install: {
         alias: 'i',
         description: 'install template',
@@ -41,10 +41,9 @@ const actionMap = {
         examples: []
     }
 };
-const projectName = process.argv[3] || 'app';
-console.log(process.argv, projectName, 9);
+var projectName = process.argv[3] || 'app';
 
-_commander2.default.command(`create ${projectName}`).description('create one app!').action(() => {
+_commander2.default.command('create ' + projectName).description('create one app!').action(function () {
     if (_fs2.default.existsSync(projectName)) {
         console.log(_chalk2.default.red('project name is exist'));
         return;
@@ -54,22 +53,21 @@ _commander2.default.command(`create ${projectName}`).description('create one app
         name: 'template',
         message: '选择开发框架：',
         choices: ['react', 'vue']
-    }]).then(answers => {
-        console.log(answers, 9);
+    }]).then(function (answers) {
         (0, _initTemplate2.default)(answers, projectName);
     });
 });
 
-Object.keys(actionMap).forEach(key => {
-    _commander2.default.command(key).description(actionMap[key].description).alias(actionMap[key].alias).action(() => {
+Object.keys(actionMap).forEach(function (key) {
+    _commander2.default.command(key).description(actionMap[key].description).alias(actionMap[key].alias).action(function () {
         console.log(key);
     });
 });
 
 function help() {
     console.log('\r\n   ' + 'how to use command');
-    Object.keys(actionMap).forEach(key => {
-        actionMap[key].examples.forEach(examples => {
+    Object.keys(actionMap).forEach(function (key) {
+        actionMap[key].examples.forEach(function (examples) {
             console.log('    ' + examples);
         });
     });
