@@ -9,4 +9,4 @@
 requestIdleCallback兼容处理，react实现了自己的reqretIdleCallback方法，通过requestAnimationFrame拿到开始帧的时间，然后通过MessageChannel来实现。
 
 
-react渲染主要分为两个阶段，第一阶段render可被打断，第二阶段commit阶段不可被打断主要是渲染dom。
+react渲染主要分为两个阶段，第一阶段render可被打断(构造任务单元，diff对比)，第二阶段commit阶段不可被打断主要是渲染dom。
