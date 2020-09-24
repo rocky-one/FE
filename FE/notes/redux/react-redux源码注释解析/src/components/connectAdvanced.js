@@ -218,7 +218,9 @@ export default function connectAdvanced(
         // middle of the notification loop.
         this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
       }
-
+      // 这个方法最终会被放到redux中的listeners队列中
+      // 等到dispatch的时候会依次执行这个方法
+      // 注意这里是所有的存到listeners的回调都会被执行一遍 暴力
       onStateChange() {
         this.selector.run(this.props)
 

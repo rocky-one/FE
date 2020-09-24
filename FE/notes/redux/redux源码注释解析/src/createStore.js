@@ -167,6 +167,8 @@ export default function createStore(reducer, preloadedState, enhancer) {
 
     try {
       isDispatching = true
+      // 执行reduer更新store
+      // 这里相当于执行了所有的reduer 都会走一遍 暴力
       currentState = currentReducer(currentState, action)
     } finally {
       isDispatching = false
