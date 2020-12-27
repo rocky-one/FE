@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title> 1-webGl基础</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvasBox"></canvas>
+</html>
+<script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
+<script>
+// 一个webGL图形需要2点
+// 1. 顶点着色器 => 用来确定坐标
+// 2. 片断着色器 => 用来绘制颜色
+
+
+// 根据不同type创建不同的着色器。顶点或者片断着色器
+function createShader(gl, type, source) {
+    const shader = gl.createShader(type)
+    gl.shaderSource(shader, source)
+    gl.compileShader(shader)
+    // gl.COMPILE_STATUS 着色器编译是否成功
+    const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS)
+    if(success) return shader
+    
+    gl.deleteShader(shader)
+}
+
+// 根据着色器创建着色程序，就是把两个着色器连接起来
+function createProgram(gl, vertexShader, fragmentShader) {
+    const program = gl.createProgram()
+    gl.attachShader(program, vertexShader)
+    gl.attachShader(program, fragmentShader)
+    gl.linkProgram(program)
+    const success = gl.getProgramParameter(program, gl.LINK_STATUS)
+    if(success) return program
+
+    gl.deleteProgram(program)
+}
+
+const vertexShaderSource = `
+    attribute vec4 a_position;
+
+    void main() {
+        gl_Position = a_position;   
+    }
+`
+const fragmentShaderSource = `
+    precision mediump float;
+
+    void main() {
+        gl_FragColor = vec4(1, 0, 0.5, 1);
+    }  
+`
+
+function main() {
+    const canvas = document.getElementById('canvasBox')
+    const gl = canvas.getContext('webgl')
+    if(!gl) return
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+    const program = createProgram(gl, vertexShader, fragmentShader)
+
+    // 获取a_position属性, 这个属性是作为输入给到顶点着色器的
+    const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
+
+    // 属性值是从缓存中读取的，这里创建缓存数据
+    const positionBuffer = gl.createBuffer()
+    // 绑定缓存信息
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+    // 写入数据
+    const positions = [
+        0, 0,
+        0, 0.5,
+        0.7, 0,
+    ]
+    // 这里把数据写入到了positionBuffer中去
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
+
+
+    webglUtils.resizeCanvasToDisplaySize(gl.canvas)
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    
+    gl.clearColor(0, 0, 0, 0)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+
+    gl.useProgram(program)
+    // 把缓存中获取的数据给 顶点着色器
+    gl.enableVertexAttribArray(positionAttributeLocation)
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+
+    const size = 2
+    const type = gl.FLOAT
+    const normalize = false
+    const stride = 0
+    const offset = 0
+    gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset)
+    const primitiveType = gl.TRIANGLES
+    const count = 3
+    gl.drawArrays(primitiveType, offset, count)
+}
+main()
+</script>
