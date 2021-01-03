@@ -70,44 +70,52 @@ function main() {
     const canvas = document.getElementById('canvasBox')
     const gl = canvas.getContext('webgl')
     if(!gl) return
+
+    // 创建着色器
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
     const program = createProgram(gl, vertexShader, fragmentShader)
+    gl.useProgram(program)
+    
 
-    // 获取a_position属性, 这个属性是作为输入给到顶点着色器的
-    const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
-
-    // 属性值是从缓存中读取的，这里创建缓存数据
+    // 创建缓存数据
     const positionBuffer = gl.createBuffer()
-    // 绑定缓存信息
+    // 绑定缓存对象给顶点缓冲类型
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
     // 写入数据
     const positions = [
-        0, 0,
-        0, 0.5,
-        0.7, 0,
+        0, 0, 1, 
+        0, 0.5, 2,
+        0.7, 0, 3
     ]
-    // 这里把数据写入到了positionBuffer中去
+    // 这里把数据写入到刚刚绑定的缓存对象positionBuffer中去
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW)
+
+
+    // 把缓存中获取的数据给 顶点着色器
+    // 获取a_position属性, 这个属性是作为输入给到顶点着色器的
+    const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
+    gl.enableVertexAttribArray(positionAttributeLocation)
 
 
     webglUtils.resizeCanvasToDisplaySize(gl.canvas)
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    
     gl.clearColor(0, 0, 0, 0)
     gl.clear(gl.COLOR_BUFFER_BIT)
-
-    gl.useProgram(program)
-    // 把缓存中获取的数据给 顶点着色器
-    gl.enableVertexAttribArray(positionAttributeLocation)
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
     const size = 2
     const type = gl.FLOAT
     const normalize = false
-    const stride = 0
+    const stride = 3
     const offset = 0
-    gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset)
+    // 设置当前顶点缓存区对象的一些属性，包括赋值
+    // 第一个参数：要修改的顶点属性的索引
+    // size：每个顶点需要的单元数量 1-4，也就是从顶点中每次取几个值
+    // type：指定数组中每个元素的数据类型 gl.FLOAT gl.BYTE 等
+    // normalize：是否对数据做归一化到一定的范围处理
+    // stride：间隔 跨过的意思，如果stride=0表示下一个顶点紧挨着当前顶点，如果size=2, stirde=3表示下一个顶点和当前顶点间隔1个值 sizeof(GLfloat)
+    // offset：偏移量，从顶点缓存对象的某一个位置开始
+    gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride * 4, offset)
     const primitiveType = gl.TRIANGLES
     const count = 3
     gl.drawArrays(primitiveType, offset, count)
