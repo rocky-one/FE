@@ -74,3 +74,28 @@ gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(position), gl.STATIC_DRAW)
 ```
 
 其中上面的缓存对象有一点需要注意，就是bindBuffer之后需要直接操作目标target，而不是操作createBuffer()返回的值positionBuffer。同一时间只能绑定一个类型的缓冲对象，当执行了bindBuffer之后缓存对象(positionBuffer)相当于已经绑定到当前context下了，所以这里通过缓存目标类型就知道我们是要操作哪个缓存对象。当往顶点缓冲区传入数据的时候就会自动进入到当前已经绑定的那个缓存对象中去。
+
+### 4. 从缓存中读取数据
+先需要激活属性。
+```javascript
+const positionAttributeLocation = gl.getAttribLocation(program, 'a_position')
+// 激活属性，不被激活的属性无法使用，激活后可以调用 vertexAttribPointer()等方法
+gl.enableVertexAttribArray(positionAttributeLocation)
+```
+然后告诉webgl从缓存中读取数据
+```javascript
+const size = 2
+const type = gl.FLOAT
+const normalize = false
+const stride = 3
+const offset = 0
+// 设置当前顶点缓存区对象的一些属性，包括赋值，告诉webgl从缓存中读取数据
+// 第一个参数：要修改的顶点属性的索引
+// size：每个顶点需要的单元数量 1-4，也就是从顶点中每次取几个值
+// type：指定数组中每个元素的数据类型 gl.FLOAT gl.BYTE 等
+// normalize：是否对数据做归一化到一定的范围处理
+// stride：间隔 跨过的意思，以字节为单位。如果stride=0表示下一个顶点紧挨着当前顶点。
+// 为了性能优化把颜色和坐标放到一个数组中[x,y,z, r,g,b,a,      x,y,z, r,g,b,a] 每一项占4个字节，stride = 4个字节 * 7项为一组 = 28，也就是每一个跨度占28个字节。
+// offset：偏移量，从顶点缓存对象的某一个字节位置开始
+gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride * 4, offset)
+```
