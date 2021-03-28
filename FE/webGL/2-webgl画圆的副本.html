@@ -11,7 +11,7 @@
 
 <script>
     const vertextShaderSource = `
-        precition lowp float;
+        precision lowp float;
         attribute vec3 v3Position;
 
         void main() {
@@ -20,7 +20,7 @@
     `
 
     const fragmentShaderSource = `
-        precition lowp float;
+        precision lowp float;
         uniform vec4 color;
 
         void main() {
@@ -30,5 +30,5 @@
     const canvas = document.getElementById('canvas')
     const gl = canvas.getContext('webgl')
     gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight)
-    
+
 </script>

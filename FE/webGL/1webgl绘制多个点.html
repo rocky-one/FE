@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <canvas id="webgl" width="400" height="400"></canvas>
+</body>
+
+</html>
+<script>
+    const vertexShaderSource = `
+        attribute vec4 a_Position;
+        attribute float a_Pointsize;
+        void main() {
+            gl_Position = a_Position;
+            gl_PointSize = a_Pointsize;
+        }
+    `
+    const fragmentShaderSource = `
+        precision mediump float;
+        uniform vec4 u_Color;
+
+        void main() {
+            gl_FragColor = u_Color;
+        }
+    `
+    function createShader(webgl, type, source) {
+        const shader = webgl.createShader(type)
+        if(!shader) return null
+
+        webgl.shaderSource(shader, source)
+        webgl.compileShader(shader)
+        // 判断是否编译成功
+        const status = webgl.getShaderParameter(shader, webgl.COMPILE_STATUS)
+        if(!status) {
+            const error = webgl.getShaderInfoLog(shader)
+            console.error(`Failed to compilte shader: ${error}`)
+            webgl.deleteShader(shader)
+        }
+
+        return shader
+    }
+
+
+    function render() {
+        const canvas = document.getElementById('webgl')
+        const gl = canvas.getContext('webgl')
+
+        // 1.shader相关操作
+        const vertextShaderObject = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
+        const fragmentShaderObject = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+
+        // 2.program相关操作
+        const programObject = gl.createProgram()
+        gl.attachShader(programObject, vertextShaderObject)
+        gl.attachShader(programObject, fragmentShaderObject)
+
+        gl.linkProgram(programObject)
+        gl.useProgram(programObject)
+
+        // 顶点着色器赋值
+        let a_Position = gl.getAttribLocation(programObject, 'a_Position')
+        let a_Pointsize = gl.getAttribLocation(programObject, 'a_Pointsize')
+
+        // 片元着色器赋值
+        let u_Color = gl.getUniformLocation(programObject, 'u_Color')
+        if (!u_Color) {
+            console.error('Failed to get the storage uniform location!');
+            return;
+        }
+        // 清空
+        gl.clearColor(0.0, 0.0, 0.0, 0.4)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+        
+        // 绘制多个点
+        const points = [
+            {
+                x: -0.3,
+                y: -0.8
+            },
+            {
+                x: 0.4,
+                y: 0.6
+            }
+        ]
+        points.forEach(item => {
+            gl.vertexAttrib3f(a_Position, item.x, item.y, 0.0)
+            gl.vertexAttrib1f(a_Pointsize, 20.0)
+            gl.uniform4f(u_Color, 1.0, 1.0, 1.0, 1.0)
+            gl.drawArrays(gl.POINTS, 0, 1)
+        })
+    }
+    render()
+
+
+</script>
