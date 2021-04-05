@@ -1,0 +1,12 @@
+{
+  "name": "koa-template",
+  "version": "0.1.0",
+  "author": "h",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "koa": "^2.13.1"
+  }
+}
