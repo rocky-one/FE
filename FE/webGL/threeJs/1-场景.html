@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title> 1 </title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            width: 800px;
+            height: 800px;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvasBox"></div>
+
+</html>
+<script src="./three.js-dev/build/three.min.js"></script>
+<script src="./three.js-dev/examples/js/controls/OrbitControls.js"></script>
+<script src="./three.js-dev/examples/js/loaders/GLTFLoader.js"></script>
+
+<script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(800, 800);
+    document.getElementById('canvasBox').appendChild(renderer.domElement);
+
+    camera.position.z = 5;
+    const controls = new THREE.OrbitControls(camera, renderer.domElement)
+    // const geometry = new THREE.BoxGeometry(1, 1, 1);
+    // const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    // const cube = new THREE.Mesh(geometry, material);
+    // scene.add(cube);
+
+    const loader = new THREE.GLTFLoader();
+
+    loader.load('./model/shiba/scene.gltf', function (gltf) {
+        scene.add(gltf.scene);
+    }, undefined, function (error) {
+        console.error(error);
+    });
+
+
+    function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+    animate();
+</script>
