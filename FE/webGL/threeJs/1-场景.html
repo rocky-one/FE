@@ -30,31 +30,134 @@
 <script src="./three.js-dev/examples/js/loaders/GLTFLoader.js"></script>
 
 <script>
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer();
-    renderer.setSize(800, 800);
-    document.getElementById('canvasBox').appendChild(renderer.domElement);
+//     const scene = new THREE.Scene();
+//     const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+//     const renderer = new THREE.WebGLRenderer();
+//     renderer.setSize(800, 800);
+//     renderer.setPixelRatio(window.devicePixelRatio);
+//     renderer.antialias = true;
+//     renderer.setClearColor(0xffffff, 0.9);
+//     document.getElementById('canvasBox').appendChild(renderer.domElement);
 
-    camera.position.z = 5;
-    const controls = new THREE.OrbitControls(camera, renderer.domElement)
-    // const geometry = new THREE.BoxGeometry(1, 1, 1);
-    // const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    // const cube = new THREE.Mesh(geometry, material);
-    // scene.add(cube);
+//     camera.position.z = 5;
+//     const controls = new THREE.OrbitControls(camera, renderer.domElement)
+//     // const geometry = new THREE.BoxGeometry(1, 1, 1);
+//     // const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 
-    const loader = new THREE.GLTFLoader();
+//     let planeGeometry = new THREE.PlaneGeometry(60, 60, 1, 1); // 平面网格
+//   let planeMaterial = new THREE.MeshLambertMaterial({color: 0xcccccc});
+//   let plane = new THREE.Mesh(planeGeometry, planeMaterial);
+//   plane.rotation.x = -0.5 * Math.PI;
+//   plane.position.x = 0;
+//   plane.position.y = 0;
+//   plane.position.z = 0;
+//   plane.receiveShadow = true;
+//   scene.add(plane);
+ 
+//   // 创建立方体
+//   let boxGeometry = new THREE.BoxGeometry(10, 10, 10);
+//   let boxGeometryMaterial = new THREE.MeshLambertMaterial({color: 0x00ff00});
+//   let box = new THREE.Mesh(boxGeometry, boxGeometryMaterial);
+//   box.position.x = 0;
+//   box.position.y = 5;
+//   box.position.z = 0;
+//   box.castShadow = true;
+//   scene.add(box);
 
-    loader.load('./model/shiba/scene.gltf', function (gltf) {
-        scene.add(gltf.scene);
-    }, undefined, function (error) {
-        console.error(error);
-    });
+//   var light = new THREE.AmbientLight( 0x404040 ); // soft white light
+// scene.add( light );
 
 
-    function animate() {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-    }
-    animate();
+//     // const loader = new THREE.GLTFLoader();
+
+//     // loader.load('./model/shiba/scene.gltf', function (gltf) {
+
+//     //     scene.add(gltf.scene);
+
+//     // }, undefined, function (error) {
+//     //     console.error(error);
+//     // });
+
+
+
+//     function animate() {
+//         requestAnimationFrame(animate);
+//         renderer.render(scene, camera);
+//     }
+//     animate();
+
+
+let Scene = new THREE.Scene(); 
+ 
+  // 创建相机
+  let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.x = -50;
+  camera.position.y = 30;
+  camera.position.z = 50;
+  camera.lookAt(Scene.position);  // 视角
+ 
+  // 创建渲染器
+  let renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(new THREE.Color(0x000000));
+  renderer.shadowMap.enabled = true;
+  document.body.appendChild(renderer.domElement);
+ 
+ 
+  // 创建平面
+  let planeGeometry = new THREE.PlaneGeometry(60, 60, 1, 1); // 平面网格
+  let planeMaterial = new THREE.MeshLambertMaterial({color: 0xcccccc});
+  let plane = new THREE.Mesh(planeGeometry, planeMaterial);
+  plane.rotation.x = -0.5 * Math.PI;
+  plane.position.x = 0;
+  plane.position.y = 0;
+  plane.position.z = 0;
+  plane.receiveShadow = true;
+  Scene.add(plane);
+ 
+  // 创建立方体
+  let boxGeometry = new THREE.BoxGeometry(10, 10, 10);
+  let boxGeometryMaterial = new THREE.MeshLambertMaterial({color: 0x00ff00});
+  let box = new THREE.Mesh(boxGeometry, boxGeometryMaterial);
+  box.position.x = 0;
+  box.position.y = 5;
+  box.position.z = 0;
+  box.castShadow = true;
+  Scene.add(box);
+ 
+  // 创建灯光
+ 
+  // 点光源
+  let spotLight = new THREE.SpotLight(0xffffff);
+  spotLight.position.set(-60, 40, -20);
+  spotLight.castShadow = true;
+  Scene.add(spotLight);
+ 
+  // 平行光
+  let directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+  // 设置光源的方向：通过光源position属性和目标指向对象的position属性计算
+  directionalLight.position.set(-60, 40, -20);
+  // 方向光指向对象网格模型mesh2，可以不设置，默认的位置是0,0,0
+  directionalLight.target = box;
+  Scene.add(directionalLight);
+ 
+  // 环境光
+  let ambient = new THREE.AmbientLight(0x444444);
+  Scene.add(ambient);//环境光对象添加到scene场景中
+ 
+ 
+  //创建控件对象
+  let controls = new THREE.OrbitControls(camera,renderer.domElement);
+ 
+  // 添加辅助坐标轴
+  let axisHelper = new THREE.AxisHelper(250);
+  Scene.add(axisHelper);
+ 
+  function render () {
+    renderer.render(Scene, camera);
+    requestAnimationFrame(render);
+  }
+  render();
+
+
 </script>
