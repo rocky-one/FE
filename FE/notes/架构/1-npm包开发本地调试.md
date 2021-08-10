@@ -31,3 +31,16 @@ npm unlink you-js-lib (这里是包名称)
 ```
 
 4. 这里重新安装线上npm时，可能报错，可尝试移除项目中的node_modules文件夹。
+
+
+5. npm组织包部署，先要在npm上创建一个自己的组织名称
+
+
+```javascript
+// 进入项目根目录
+npm login
+
+npm init --scope=组织名称
+
+npm publish --access public
+```
