@@ -1,0 +1,42 @@
+{
+  "name": "@nice-cli/core",
+  "version": "0.0.2",
+  "description": "> TODO: description",
+  "author": "rocky-one <zuihongyanxiangsi@163.com>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "bin": {
+    "nice-cli": "bin/index.js"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "dependencies": {
+    "@nice-cli/get-npm-info": "file:../utils/get-npm-info",
+    "@nice-cli/log": "file:../utils/log",
+    "@nice-cli/init": "file:../utils/init",
+    "@nice-cli/utils": "file:../utils",
+    "@nice-cli/exec": "file:./exec",
+    "@nice-cli/package": "file:../models",
+    "commander": "^8.1.0",
+    "import-local": "^3.0.2",
+    "minimist": "^1.2.5",
+    "npmlog": "^5.0.0",
+    "path-exists": "^4.0.0",
+    "url-join": "^4.0.1",
+    "user-home": "^3.0.0"
+  },
+  "devDependencies": {
+    "axios": "^0.21.1",
+    "colors": "^1.4.0",
+    "root-check": "^1.0.0",
+    "semver": "^7.3.5"
+  }
+}

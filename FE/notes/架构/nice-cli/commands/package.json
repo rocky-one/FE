@@ -1,0 +1,19 @@
+{
+  "name": "commands",
+  "version": "0.0.0",
+  "description": "> TODO: description",
+  "author": "rocky-one <zuihongyanxiangsi@163.com>",
+  "homepage": "",
+  "license": "ISC",
+  "main": "lib/commands.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  }
+}
