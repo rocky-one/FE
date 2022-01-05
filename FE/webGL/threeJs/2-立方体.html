@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title> 1 </title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            width: 800px;
+            height: 800px;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvasBox"></div>
+</html>
+<script src="./three/build/three.min.js"></script>
+<script src="./three/examples/js/controls/OrbitControls.js"></script>
+<script>
+    // 创建场景
+    const Scene = new THREE.Scene();
+
+    // 创建相机
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.x = -50;
+    camera.position.y = 30;
+    camera.position.z = 50;
+
+    // 创建渲染器
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+
+    // 创建立方体
+    const boxGeometry = new THREE.BoxGeometry(10, 10, 10);
+    const boxGeometryMaterial = new THREE.MeshLambertMaterial({ color: 0xff0040 });
+    const box = new THREE.Mesh(boxGeometry, boxGeometryMaterial);
+    box.position.x = 0;
+    box.position.y = 5;
+    box.position.z = 0;
+    Scene.add(box);
+
+    // 点光源
+    const spotLight = new THREE.PointLight(0xffffff);
+    spotLight.position.set(-60, 40, -20);
+    spotLight.castShadow = true;
+    Scene.add(spotLight);
+
+    // 创建轨道控制对象
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.autoRotate = true
+    controls.enableZoom = true
+    controls.autoRotateSpeed = 10
+
+    function render() {
+        renderer.render(Scene, camera);
+        controls.update()
+        requestAnimationFrame(render);
+    }
+    render();
+
+
+</script>
