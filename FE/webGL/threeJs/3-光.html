@@ -32,8 +32,8 @@
     const Scene = new THREE.Scene();
 
     // 创建相机
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.x = -4;
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.x = - 4;
     camera.position.z = 4;
     camera.position.y = 2;
 
@@ -44,19 +44,22 @@
 
 
     // 创建立方体
-    const boxGeometryMaterial = new THREE.MeshLambertMaterial({ color: 0xff0040 });
+    const cubeMat = new THREE.MeshStandardMaterial({
+        roughness: 0.7,
+        color: 0xffffff,
+        bumpScale: 0.002,
+        metalness: 0.2
+    });
     const boxGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-    const boxMesh = new THREE.Mesh(boxGeometry, boxGeometryMaterial);
-    boxMesh.position.set(0.5, 0.25, -1);
+    const boxMesh = new THREE.Mesh(boxGeometry, cubeMat);
+    boxMesh.position.set(- 0.5, 0.25, - 1);
     boxMesh.castShadow = true;
     Scene.add(boxMesh);
 
-
     // 点光源
-    const spotLight = new THREE.PointLight(0xffffff);
+    const spotLight = new THREE.PointLight(0xffee88, 1, 100, 2);
     spotLight.position.set(0, 2, 0);
     spotLight.castShadow = true;
-
     // 为光源创建一个几何体
     const lightGeometry = new THREE.SphereGeometry(0.06)
     spotLight.add(new THREE.Mesh(lightGeometry))
@@ -65,9 +68,13 @@
 
     // 创建轨道控制对象
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.autoRotate = true
     controls.enableZoom = true
+    controls.autoRotateSpeed = 10
 
     function render() {
+        const time = Date.now() * 0.0005;
+        spotLight.position.y = Math.cos(time) * 0.75 + 1.25;
         renderer.render(Scene, camera);
         controls.update()
         requestAnimationFrame(render);
