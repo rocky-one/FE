@@ -13,5 +13,15 @@ async function sleepTest() {
   await sleep(2000)
   console.log(2222)
 }
-sleepTest()
+sleepTest();
+
+// 利用performance
+function sleep(timer) {
+    const start = performance.now()
+    while (performance.now() - start < timer) {
+    console.log(11)
+    }
+    console.log('done!')
+}
+sleep(1000);
 ```
