@@ -63,9 +63,9 @@ const positionBuffer = gl.createBuffer()
 // 这里使用顶点缓存，
 gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
 const position = [
-  0, 0,
-  0, 0.5,
-  0.7, 0,
+  0, 0, 0,   1, 0, 0, 1,
+  0, 0.5, 0, 0, 1, 0, 1,
+  0.7, 0, 0, 0, 0, 1, 1
 ]
 // bufferData是通过指定缓存目标类型(gl.ARRAY_BUFFER)来进行数据传递的
 // 当bindBuffer之后想要操作缓存对象(positionBuffer)，就不能直接对positionBuffer进行操作了
@@ -84,7 +84,7 @@ gl.enableVertexAttribArray(positionAttributeLocation)
 ```
 然后告诉webgl从缓存中读取数据
 ```javascript
-const size = 2
+const size = 3
 const type = gl.FLOAT
 const normalize = false
 const stride = 3
@@ -97,5 +97,5 @@ const offset = 0
 // stride：间隔 跨过的意思，以字节为单位。如果stride=0表示下一个顶点紧挨着当前顶点。
 // 为了性能优化把颜色和坐标放到一个数组中[x,y,z, r,g,b,a,      x,y,z, r,g,b,a] 每一项占4个字节，stride = 4个字节 * 7项为一组 = 28，也就是每一个跨度占28个字节。
 // offset：偏移量，从顶点缓存对象的某一个字节位置开始
-gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride * 4, offset)
+gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, 7 * 4, offset)
 ```
