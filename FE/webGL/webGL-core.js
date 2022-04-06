@@ -8,7 +8,7 @@ function createShader(webgl, type, source) {
     const status = webgl.getShaderParameter(shader, webgl.COMPILE_STATUS)
     if (!status) {
         const error = webgl.getShaderInfoLog(shader)
-        console.error(`Failed to compilte shader: ${error}`)
+        console.error(`Failed to compilte shader---source:${source}--- error: ${error}`)
         webgl.deleteShader(shader)
     }
 

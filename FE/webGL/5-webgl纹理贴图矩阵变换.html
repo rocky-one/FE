@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <canvas id="webgl" width="600" height="600"></canvas>
+</body>
+
+</html>
+<script src='./webGL-core.js'></script>
+<script src='./matrix.js'></script>
+<script>
+
+    const vertexShaderSource = `
+        attribute vec2 a_position;
+        attribute vec2 a_texCoord;
+
+        // uniform vec2 u_resolution;
+        uniform mat3 u_matrix;
+        varying vec2 v_texCoord;
+
+        void main() {
+            // vec2 zeroToOne = a_position / u_resolution;
+
+            // vec2 zeroToTwo = zeroToOne * 2.0;
+
+            // vec2 clipSpace = zeroToTwo - 1.0;
+
+            // gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+            gl_Position = vec4((u_matrix * vec3(a_position, 1)).xy, 0, 1);
+
+            v_texCoord = a_texCoord;
+        }
+    `
+    const fragmentShaderSource = `
+        precision mediump float;
+
+        uniform sampler2D u_image;
+
+        varying vec2 v_texCoord;
+
+        void main() {
+            gl_FragColor = texture2D(u_image, v_texCoord);
+        }
+    `
+    // 'http://localhost:8085/image/1.jpg'
+    onLoadImage('https://webglfundamentals.org/webgl/resources/leaves.jpg', render)
+    
+    function setRectangle(gl, x, y, width, height) {
+        var x1 = x;
+        var x2 = x + width;
+        var y1 = y;
+        var y2 = y + height;
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            x1, y1,
+            x2, y1,
+            x1, y2,
+            x1, y2,
+            x2, y1,
+            x2, y2,
+        ]), gl.STATIC_DRAW);
+    }
+
+    function render(image) {
+        const canvas = document.getElementById('webgl')
+        const gl = canvas.getContext('webgl')
+
+        // 1.shader相关操作
+        const vertextShaderObject = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
+        const fragmentShaderObject = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+
+        // 2.program相关操作
+        const programObject = createProgram(gl, vertextShaderObject, fragmentShaderObject)
+
+        // 获取顶点着色器赋值
+        let a_position = gl.getAttribLocation(programObject, 'a_position')
+        var texcoordLocation = gl.getAttribLocation(programObject, "a_texCoord");
+        var matrixLocation = gl.getUniformLocation(programObject, "u_matrix");
+        // 顶点数据
+        const points = new Float32Array([
+        //   x      y     z     r    g    b    a
+            -0.5, +0.5, 0.0,  1.0, 0.0, 0.0, 1.0,
+            +0.5, +0.5, 0.0,  1.0, 1.0, 0.0, 1.0,
+            +0.5, -0.5, 0.0,  0.0, 1.0, 1.0, 1.0,
+            -0.5, -0.5, 0.0,  0.0, 0.0, 0.0, 1.0
+        ])
+        // 索引
+        const indexs = new Uint16Array([
+            0, 1, 2,
+            0, 2, 3
+        ])
+
+        // 创建定点缓冲区
+        const vertextBuffer = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertextBuffer)
+        // gl.bufferData(gl.ARRAY_BUFFER, points, gl.STATIC_DRAW)
+        setRectangle(gl, 0, 0, image.width, image.height);
+
+        // 纹理缓冲区
+        const texcoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            0.0,  0.0,
+            1.0,  0.0,
+            0.0,  1.0,
+            0.0,  1.0,
+            1.0,  0.0,
+            1.0,  1.0,
+        ]), gl.STATIC_DRAW);
+
+
+        const texture = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image)
+        // var resolutionLocation = gl.getUniformLocation(programObject, "u_resolution");
+
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        // 清空
+        gl.clearColor(0.0, 0.0, 0.0, 0.0)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+
+        // 创建索引缓冲区
+        // const indexBuffer = gl.createBuffer()
+        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+        // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexs, gl.STATIC_DRAW)
+
+        gl.enableVertexAttribArray(a_position)
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertextBuffer);
+        gl.vertexAttribPointer(a_position, 2, gl.FLOAT, false, 0, 0)
+
+        // 片元着色器赋值
+        // let u_Color = gl.getUniformLocation(programObject, 'u_Color')
+        // if (!u_Color) {
+        //     console.error('Failed to get the storage uniform location!');
+        //     return;
+        // }
+       
+        gl.enableVertexAttribArray(texcoordLocation);
+        gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+        gl.vertexAttribPointer(texcoordLocation, 2, gl.FLOAT, false, 0, 0)
+        
+        var projectionMatrix = matrix.projection(gl.canvas.clientWidth, gl.canvas.clientHeight);
+        gl.uniformMatrix3fv(matrixLocation, false, projectionMatrix);
+
+        // gl.uniform2f(resolutionLocation, gl.canvas.width, gl.canvas.height);
+
+
+        // gl.uniform4f(u_Color, 1.0, 0.0, 1.0, 0.7)
+
+        // 6：几个索引值
+        // gl.UNSIGNED_SHORT：对应索引缓冲区Uint16Array
+        // 0：偏移量
+        // gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0)
+        gl.drawArrays(gl.TRIANGLES, 0, 6)
+        
+    }
+
+</script>
