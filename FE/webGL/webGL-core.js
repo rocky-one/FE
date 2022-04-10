@@ -54,3 +54,8 @@ function bindTexture(webgl, texture) {
     webgl.texParameteri(webgl.TEXTURE_2D, webgl.TEXTURE_WRAP_S, webgl.CLAMP_TO_EDGE)
     webgl.texParameteri(webgl.TEXTURE_2D, webgl.TEXTURE_WRAP_T, webgl.CLAMP_TO_EDGE)
 }
+
+
+function degToRad(d) {
+    return d * Math.PI / 180;
+}
