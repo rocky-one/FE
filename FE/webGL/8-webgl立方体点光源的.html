@@ -17,46 +17,48 @@
 
     const vertexShaderSource = `
         attribute vec4 a_position;
-        attribute vec4 a_color;
-        uniform mat4 u_matrix;
-        varying vec4 v_color;
         attribute vec3 a_normal;
-        varying vec3 v_normal;
-
 
         uniform vec3 u_lightWorldPosition;
+
         uniform mat4 u_world;
         uniform mat4 u_worldViewProjection;
         uniform mat4 u_worldInverseTranspose;
+
+        varying vec3 v_normal;
+
         varying vec3 v_surfaceToLight;
 
-
         void main() {
-            gl_Position = u_matrix * a_position;
-            v_color = a_color;
-            v_normal = a_normal;
+            gl_Position = u_worldViewProjection * a_position;
 
+            // orient the normals and pass to the fragment shader
+            v_normal = mat3(u_worldInverseTranspose) * a_normal;
 
-            // gl_Position = u_worldViewProjection * a_position;
+            // compute the world position of the surfoace
+            vec3 surfaceWorldPosition = (u_world * a_position).xyz;
 
-            // v_normal = mat3(u_worldInverseTranspose) * a_normal;
-            // vec3 surfaceWorldPosition = (u_world * a_position).xyz;
-            // v_surfaceToLight = u_lightWorldPosition - surfaceWorldPosition;
-
+            // compute the vector of the surface to the light
+            // and pass it to the fragment shader
+            v_surfaceToLight = u_lightWorldPosition - surfaceWorldPosition;
         }
     `
     const fragmentShaderSource = `
         precision mediump float;
-        varying vec4 v_color;
-        
         varying vec3 v_normal;
-        uniform vec3 u_reverseLightDirection;
+        varying vec3 v_surfaceToLight;
+
+        uniform vec4 u_color;
 
         void main() {
+            
             vec3 normal = normalize(v_normal);
-            float light = dot(normal, u_reverseLightDirection);
 
-            gl_FragColor = v_color;
+            vec3 surfaceToLightDirection = normalize(v_surfaceToLight);
+
+            float light = dot(normal, surfaceToLightDirection);
+
+            gl_FragColor = u_color;
             gl_FragColor.rgb *= light;
         }
     `
@@ -83,16 +85,25 @@
 
     function render(image) {
 
+        // const postionColor = new Float32Array([
+        //     80, 80, 80,    0.2, 1, 0.2, // v0
+        //     -80, 80, 80,   0.2, 1, 0.2, // v1
+        //     -80, -80, 80,  0.2, 1, 0.2, // v2
+        //     80, -80, 80,   0.2, 1, 0.2, // v3
+        //     80, -80, -80,  0.2, 1, 0.2, // v4
+        //     80, 80, -80,   0.2, 1, 0.2, // v5
+        //     -80, 80, -80,  0.2, 1, 0.2, // v6
+        //     -80, -80, -80, 0.2, 1, 0.2, // v7
+        // ])
+
         const postionColor = new Float32Array([
-            80, 80, 80,    0.2, 1, 0.2, // v0
-            -80, 80, 80,   0.2, 1, 0.2, // v1
-            -80, -80, 80,  0.2, 1, 0.2, // v2
-            80, -80, 80,   0.2, 1, 0.2, // v3
-            80, -80, -80,  0.2, 1, 0.2, // v4
-            80, 80, -80,   0.2, 1, 0.2, // v5
-            -80, 80, -80,  0.2, 1, 0.2, // v6
-            -80, -80, -80, 0.2, 1, 0.2, // v7
-        ])
+        30,30,30,-30,30,30,-30,-30,30,30,30,30,-30,-30,30,30,-30,30,      //面1
+        30,30,30,30,-30,30,30,-30,-30,30,30,30,30,-30,-30,30,30,-30,      //面2
+        30,30,30,30,30,-30,-30,30,-30,30,30,30,-30,30,-30,-30,30,30,      //面3
+        -30,30,30,-30,30,-30,-30,-30,-30,-30,30,30,-30,-30,-30,-30,-30,30,//面4
+        -30,-30,-30,30,-30,-30,30,-30,30,-30,-30,-30,30,-30,30,-30,-30,30,//面30
+        30,-30,-30,-30,-30,-30,-30,30,-30,30,-30,-30,-30,30,-30,30,30,-30 ]);
+
         const indexs = new Uint16Array([
             0,1,2, 0,2,3,
             0,3,4, 0,4,5,
@@ -101,14 +112,22 @@
             7,4,3, 7,3,2,
             4,7,6, 4,6,5
         ])
+        // const normals = new Float32Array([
+        //     0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,  // v0-v1-v2-v3 front
+        //     1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,  // v0-v3-v4-v5 right
+        //     0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,  // v0-v5-v6-v1 up
+        //     -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0,  // v1-v6-v7-v2 left
+        //     0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0,  // v7-v4-v3-v2 down
+        //     0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0   // v4-v7-v6-v5 back
+        // ])
         const normals = new Float32Array([
-            0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,  // v0-v1-v2-v3 front
-            1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0,  // v0-v3-v4-v5 right
-            0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0,  // v0-v5-v6-v1 up
-            -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0,  // v1-v6-v7-v2 left
-            0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0,  // v7-v4-v3-v2 down
-            0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0   // v4-v7-v6-v5 back
-        ])
+            0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1, 0,0,1,//z轴正方向——面1
+            1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,//x轴正方向——面2
+            0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,//y轴正方向——面3
+            -1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,//x轴负方向——面4
+            0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,//y轴负方向——面5
+            0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1
+        ]);
         const canvas = document.getElementById('webgl')
         const gl = canvas.getContext('webgl')
 
@@ -121,21 +140,24 @@
 
         // 获取属性
         let a_position = gl.getAttribLocation(programObject, 'a_position')
-        let a_color = gl.getAttribLocation(programObject, 'a_color')
-        let u_matrix = gl.getUniformLocation(programObject, "u_matrix");
+        // let a_color = gl.getAttribLocation(programObject, 'a_color')
+        let u_color = gl.getUniformLocation(programObject, 'u_color')
+        // let u_matrix = gl.getUniformLocation(programObject, "u_matrix");
         let reverseLightDirectionLocation = gl.getUniformLocation(programObject, "u_reverseLightDirection");
         let a_normal = gl.getAttribLocation(programObject, "a_normal");
         let worldViewProjectionLocation = gl.getUniformLocation(programObject, 'u_worldViewProjection');
+        let worldLocation = gl.getUniformLocation(programObject, 'u_world');
+        let worldInverseTransposeLocation = gl.getUniformLocation(programObject, 'u_worldInverseTranspose');
+        let lightWorldPositionLocation = gl.getUniformLocation(programObject, 'u_lightWorldPosition');
         // 创建定点缓冲区
         const vertextBuffer = gl.createBuffer()
         gl.bindBuffer(gl.ARRAY_BUFFER, vertextBuffer)
         gl.bufferData(gl.ARRAY_BUFFER, postionColor, gl.STATIC_DRAW);
-        // setGeometry(gl, 0, 0, 400, 400);
         
         // 创建索引缓冲区
-        const indexBuffer = gl.createBuffer()
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexs, gl.STATIC_DRAW)
+        // const indexBuffer = gl.createBuffer()
+        // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer)
+        // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexs, gl.STATIC_DRAW)
 
 
         let normalBuffer = gl.createBuffer();
@@ -157,26 +179,16 @@
 
             gl.enableVertexAttribArray(a_position)
             gl.bindBuffer(gl.ARRAY_BUFFER, vertextBuffer);
-            gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 6 * 4, 0)
+            gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 3 * 4, 0)
 
 
-            gl.enableVertexAttribArray(a_color)
-            gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, 6 * 4, 3 * 4)
+            // gl.enableVertexAttribArray(a_color)
+            // gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, 6 * 4, 3 * 4)
 
             gl.enableVertexAttribArray(a_normal);
             gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
             gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 0, 0)
 
-
-            // 投影转换
-            // var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-            // var zNear = 1;
-            // var zFar = 2000;
-            // var matrix = m4.perspective(degToRad(80), aspect, zNear, zFar);
-            // matrix = m4.xRotate(matrix, degToRad(30));
-            // matrix = m4.yRotate(matrix, degToRad(40));
-            // matrix = m4.translate(matrix, 330, -260, -360);
-            // gl.uniformMatrix4fv(u_matrix, false, matrix);
 
             // Compute the projection matrix
             let aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
@@ -185,34 +197,37 @@
             let projectionMatrix = m4.perspective(fieldOfViewRadians, aspect, zNear, zFar);
 
             // Compute the camera's matrix
-            let camera = [400, 150, 400];
+            let camera = [100, 150, 200];
             let target = [0, 35, 0];
             let up = [0, 1, 0];
             let cameraMatrix = m4.lookAt(camera, target, up);
 
-            // Make a view matrix from the camera matrix.
-            let viewMatrix = m4.inverse(cameraMatrix);
+             // Make a view matrix from the camera matrix.
+             let viewMatrix = m4.inverse(cameraMatrix);
 
             // Compute a view projection matrix
             let viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
-
             // Draw a F at the origin
             let worldMatrix = m4.yRotation(fRotationRadians);
 
             // Multiply the matrices.
             let worldViewProjectionMatrix = m4.multiply(viewProjectionMatrix, worldMatrix);
-
+            let worldInverseMatrix = m4.inverse(worldMatrix);
+            let worldInverseTransposeMatrix = m4.transpose(worldInverseMatrix);
             // Set the matrix.
-            gl.uniformMatrix4fv(u_matrix, false, worldViewProjectionMatrix);
+            gl.uniformMatrix4fv(worldViewProjectionLocation, false, worldViewProjectionMatrix);
+            gl.uniformMatrix4fv(worldInverseTransposeLocation, false, worldInverseTransposeMatrix);
+            gl.uniformMatrix4fv(worldLocation, false, worldMatrix);
+
+            gl.uniform3fv(lightWorldPositionLocation, [20, 50, 60]);
 
 
-
-
-            gl.uniform3fv(reverseLightDirectionLocation, m4.normalize([1, 0.3, 0.1]));
+            gl.uniform4fv(u_color, [0.2, 1, 0.2, 1])
             // 6：几个索引值
             // gl.UNSIGNED_SHORT：对应索引缓冲区Uint16Array
             // 0：偏移量
-            gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0)
+            // gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0)
+            gl.drawArrays(gl.TRIANGLES, 0, 36)
         }
         draw()
 
@@ -223,7 +238,7 @@
         }
         let fr = 0;
         setInterval(() => {
-            fr++
+            fr+=6
             if (fr > 360) {
                 fr = 0;
             }
