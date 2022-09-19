@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <script src="gl-matrix.js" type="text/javascript"></script>
+        <script src="webGL-core.js" type="text/javascript"></script>
     </head>
     <body onload="webGLStart()">
         <canvas id="canvas" width="500" height="500"></canvas>
@@ -35,24 +36,7 @@
             var animTime = 0;
             var projectMatix = mat4.create();
             var unifomProj = 0;
-
-            const TAU_SEGMENTS = 80;
-            const TAU = Math.PI * 2;
-            function arc(x0, y0, radius, startAng = 0, endAng = Math.PI * 2) {
-                const ang = Math.min(TAU, endAng - startAng);
-                const ret = ang === TAU ? [] : [[x0, y0]];
-                const segments = Math.round(TAU_SEGMENTS * ang / TAU);
-                for(let i = 0; i <= segments; i++) {
-                    const x = x0 + radius * Math.cos(startAng + ang * i / segments);
-                    const y = y0 + radius * Math.sin(startAng + ang * i / segments);
-                    ret.push([x, y]);
-                }
-                return ret;
-            }
-
-            console.log(arc(0, 0, 100));
-
-
+            var circle = [];
             /**
              * 初始化完成资源的加载
              */
@@ -99,19 +83,8 @@
                     200, 0, 0
                     
                 ];
-                var circle = new Float32Array(362 * 3);
-                var radius = 100;
-                var centerX = 200,
-                    centerY = 200;
-                circle[0] = centerX;
-                circle[1] = centerY;
-                circle[2] = 0;
-                for (var i = 1; i < 362; i++) {
-                    circle[i * 3 + 0] = radius * Math.cos(Math.PI/180 * i) + centerX;
-                    circle[i * 3 + 1] = radius * Math.sin(Math.PI/180 * i) + centerY;
-                    circle[i * 3 + 2] = 0;
-                }
-                
+                circle = arcs(200, 200, 100)
+                console.log(circle)
                 // var indexDatas = [
                 //     0, 1, 2,
                 //     0, 2, 3
@@ -155,7 +128,7 @@
                     webgl.vertexAttribPointer(v3PositionIndex, 3, webgl.FLOAT, false, 4 * 3, 0);
                     
                     // webgl.drawElements(webgl.TRIANGLES, 6, webgl.UNSIGNED_SHORT, 0);
-                    webgl.drawArrays(webgl.TRIANGLE_FAN, 0, 362);
+                    webgl.drawArrays(webgl.TRIANGLE_FAN, 0, circle.length / 3);
                 }
                 webgl.useProgram(null);
             }

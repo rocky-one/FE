@@ -59,3 +59,17 @@ function bindTexture(webgl, texture) {
 function degToRad(d) {
     return d * Math.PI / 180;
 }
+
+// 画圆计算
+function arcs(x, y, radius, startAngle = 0, endAngle = 360) {
+    const ang = endAngle - startAngle;
+    const poins = [x, y, 0];
+    for (let i = 0; i <= ang; i++) {
+        // i / ang 是当前角度占整个角度的比，然后总值2 * Math.PI = 360度， 2 * Math.PI * 比 = 当前的角度占比
+        const are = 2 * Math.PI * (i / ang);
+        const x1 = x + radius * Math.cos(are);
+        const y1 =  y + radius * Math.sin(are);
+        poins.push(x1, y1, 0);
+    }
+    return new Float32Array(poins);
+}
