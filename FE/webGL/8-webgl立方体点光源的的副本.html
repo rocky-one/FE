@@ -56,7 +56,7 @@
 
             vec3 surfaceToLightDirection = normalize(v_surfaceToLight);
 
-            float light = dot(normal, surfaceToLightDirection);
+            float light = max(dot(normal, surfaceToLightDirection), 0.0);
 
             gl_FragColor = u_color;
             gl_FragColor.rgb *= light;

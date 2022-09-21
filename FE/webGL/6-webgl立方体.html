@@ -6,7 +6,7 @@
 </head>
 
 <body>
-    <canvas id="webgl" width="800" height="800"></canvas>
+    <canvas id="webgl" width="800" height="800" style="width: 800px; height: 800px;"></canvas>
 </body>
 
 </html>
@@ -75,8 +75,9 @@
             4,7,6, 4,6,5
         ])
         const canvas = document.getElementById('webgl')
-        const gl = canvas.getContext('webgl')
-
+        const gl = canvas.getContext('webgl', {
+            antialias: true
+        })
         // 1.shader相关操作
         const vertextShaderObject = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
         const fragmentShaderObject = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
@@ -106,8 +107,10 @@
         gl.clear(gl.COLOR_BUFFER_BIT)
         gl.enable(gl.CULL_FACE);
         gl.enable(gl.DEPTH_TEST);
+        // gl.enable(gl.SAMPLE_COVERAGE);
+        // gl.sampleCoverage(0.9, false);
 
-
+        console.log(gl.getParameter(gl.SAMPLE_COVERAGE_VALUE), gl.getParameter(gl.SAMPLE_COVERAGE_INVERT))
         gl.enableVertexAttribArray(a_position)
         // gl.bindBuffer(gl.ARRAY_BUFFER, vertextBuffer);
         gl.vertexAttribPointer(a_position, 3, gl.FLOAT, false, 6 * 4, 0)
@@ -124,9 +127,6 @@
         matrix = m4.translate(matrix, 400, 200, 60);
 
         gl.uniformMatrix4fv(u_matrix, false, matrix);
-
-
-        
 
         // 6：几个索引值
         // gl.UNSIGNED_SHORT：对应索引缓冲区Uint16Array
