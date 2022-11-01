@@ -1,0 +1,111 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+	<title></title>
+	<meta charset="utf-8" />
+</head>
+
+<body>
+</body>
+
+</html>
+<script>
+
+	function resolve(self, val) {
+		setTimeout(() => {
+			self._status = 1;
+			self._value = val;
+			self._deferreds.forEach(deferred => {
+				deferred.onResolve(val);
+			});
+			self._deferreds = [];
+		}, 0)
+	}
+
+	function reject(self, val) {
+		setTimeout(() => {
+			self._status = 2;
+			self._value = val;
+			this._deferreds.forEach(deferred => {
+				deferred.onReject(val);
+			});
+			self._deferreds = [];
+		}, 0);
+	}
+
+	class Promise2 {
+		constructor(fn) {
+			this._value = null;
+			this._deferreds = [];
+			this._status = 0;
+			fn((val) => resolve(this, val), (val) => reject(this, val))
+		}
+		then = (onResolve, onReject) => {
+			this._deferreds.push({
+				onResolve,
+				onReject
+			})
+		}
+	}
+	const p22 = new Promise2(resolve => {
+		resolve(1);
+	});
+	p22.then(res => {
+		console.log(res, 9090);
+	});
+
+	Promise.all = function(arr) {
+		const promiseArr = Array.prototype.slice.call(arr);
+		return new Promise((resolve, reject) => {
+			for(let i = 0; i < promiseArr.length; i++) {
+				handData(i, promiseArr[i]);
+			}
+			let sum = promiseArr.length;
+
+			function handData(index, val) {
+				if (val && typeof val === 'object') {
+					if (val.then) {
+						val.then((v) => {
+							handData(index, v);
+						});
+						return;
+					}
+				} else {
+					promiseArr[index] = val;
+				}
+				sum--;
+				if (sum === 0) {
+					resolve(promiseArr)
+				}
+			}
+		});
+	}
+	Promise.race = (arr) => {
+		return new Promise((resolve) => {
+			for(let i = 0; i < arr.length; i++) {
+				Promise.resolve(arr[i]).then(resolve);
+			}
+		})
+  	}
+
+	const p1 = new Promise((resolve, reject) => {
+		setTimeout(() => {
+			resolve(1)
+		}, 200)
+	})
+	const p2 = new Promise((resolve, reject) => {
+		setTimeout(() => {
+			resolve(2)
+		}, 300)
+	})
+	const p3 = new Promise((resolve, reject) => {
+		setTimeout(() => {
+			resolve(3)
+		}, 100)
+	})
+	// 结果[1, 2, 3] 
+	Promise.race([p1,p2,p3]).then(res=>{
+		console.log(res)
+	})
+</script>

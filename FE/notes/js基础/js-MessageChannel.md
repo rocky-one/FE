@@ -3,11 +3,11 @@
 ### 使用
 ```javascript
 const channel = new MessageChannel2();
-  const port2 = channel.port2;
-  channel.port1.onmessage = function(data){
-    console.log(data) // hello
-  };
-  port2.postMessage('hello');
+channel.port1.onmessage = function(data){
+  console.log(data) // hello
+};
+const port2 = channel.port2;
+port2.postMessage('hello');
 ```
 
 ### 简单实现

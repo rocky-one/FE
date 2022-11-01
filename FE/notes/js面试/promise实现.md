@@ -479,7 +479,12 @@ class CopyPromise {
             // 		resolve('promse1')
             // 	}))
             // })
+
             // 那就需要继续执行嵌套的promise等待它的结束, 也就是递归的效果
+            // then((val) => {
+            //   res(index, val)
+            // },
+            // reject)
             then.call(
               val,
               function (val) {
@@ -571,7 +576,7 @@ class CopyPromise {
   // 哪个快 就把哪个的结果返回
   static race = (arr) => {
     // 这是外层promise 便于链式调用
-    return new CopyPromise(resolve => { 
+    return new CopyPromise(resolve => {
       for (var i = 0, len = arr.length; i < len; i++) {
         // 依次调用CopyPromise.resolve, 当然也可以手动new CopyPromise，这里因为有之前写好的方法所以直接拿过来用
         // 然后关键的是怎么让先执行完的那个promise，执行完后，后面的promise就不会再执行了

@@ -1,10 +1,10 @@
-## react-hooks 实现原理 ##
+## react-useState中链表结构实现 ##
 
 hooks利用的是单向链表结构存储
 
 hooks的数据结构如下:
 ```javascript
-interface hook {
+const hook = {
   // 当前hook的值
   memoizedState: any;
   // 指向下一个hook
@@ -31,7 +31,6 @@ const hooks = {
 下面看如何实现hooks链表
 ```javascript
 
-// 创建hooks链表
 
 // 存储第一个hook
 let firstHook = null;
@@ -42,7 +41,7 @@ let mounted = false;
 // 当前正在执行计算的 hook
 let currentUpdateHook = null;
 
-
+// 创建hooks链表方法
 function createHookLinked() {
   const hook = {
     memoizedState: null,
@@ -150,9 +149,11 @@ function useState(initialState) {
   return [hook.memoizedState, dispatcher];
 }
 ```
+
+借用一张图来看看整体结构
 ![avatar](./hooks.png)
 
-hooks为什么不用用if 看下面代码：
+hooks为什么不能用if 看下面代码：
 ```javascript
   let mounted = false;
   function App() {
@@ -167,7 +168,8 @@ hooks为什么不用用if 看下面代码：
 
     return <div onClick={()=>setName('hello')}>点击<div>
   }
-  // 点击按钮的时候consoe.log输出的不是'str',而是'hello'
-  // 调用setName的时候，整个函数会重新执行，但是判断不会走了useState('aaa')和useState(1)不会重新取值了， 直接取str从链表的memoizedState字段取值
-  // 看代码98行，因为从第一个hook开始取值，所以就把name=hello取出来了。
+
 ```
+// 点击按钮的时候consoe.log输出的不是'str',而是'hello'
+// 调用setName的时候，整个函数会重新执行，但是判断不会走useState('aaa')和useState(1)，不会重新取值了， 直接取str从链表的memoizedState字段取值
+// 看代码98行，因为从第一个hook开始取值，所以就把name=hello取出来了。
