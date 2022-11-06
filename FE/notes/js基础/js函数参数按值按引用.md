@@ -36,7 +36,9 @@ let a = {
     name: 'rocky'
 }
 function fn(n){
-    n = 1
+    n = {
+        age: 18
+    }
     console.log(n)
 }
 fn(a)

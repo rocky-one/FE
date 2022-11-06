@@ -13,6 +13,22 @@
 </body>
 </html>
 <script>
+
+// 说说redux实现原理
+// redux会创建一个store tree，所有的状态都存到这里。
+// 3个原则，单一数据源就一个store， state只读必须通过dispatch修改， reducer使用纯函数不能有副作用
+
+// createStore方法返回的值
+function createStore() {
+ let state = {} // 公共状态
+ const getState = () => {} // 存储的数据，状态树；
+ const dispatch = () => {} // 分发action，并返回一个action，这是唯一能改变store中数据的方式；
+ const subscribe = () => {} //注册一个监听者，store发生变化的时候被调用。
+ return {dispatch,subscribe,getState}
+}
+
+
+
 // reducer是所有的reducer方法
 function createStore(reducer){
     const store = {}

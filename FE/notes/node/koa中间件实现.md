@@ -35,16 +35,16 @@ compose([m1, m2, m3])();
 ```javascript
 // 递归实现compose
 function compose(middleware) {
-    return function (ctx, next) {
-        let index = -1
-        return dispatch(0)
+    return function (ctx) {
+        // 就是外部调用的next方法
         function dispatch(i) {
             if(i >= middleware.length) return Promise.resolve()
-            const fn = middleware[i]
-            // fn第二个参数其实就是下一个中间件方法，也就是next方法
+            const mid = middleware[i]
+            // mid第二个参数其实就是下一个中间件方法，也就是next方法
             // 上一个中间件执行next方法就会继续递归下去，通过next实现异步流程的控制
-            return Promise.resolve(fn(ctx, dispatch.bind(null, i + 1)))
+            return Promise.resolve(mid(ctx, dispatch.bind(null, i + 1)))
         }
+        return dispatch(0)
     }
 }
 

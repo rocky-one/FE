@@ -457,7 +457,7 @@ class CopyPromise {
 
 
   static all = (arr) => {
-    let args = Array.prototype.slice.call(arr);
+    const result = new Array(arr.length);
     // 首先最外层要返回一个promise实例，以便于链式调用
     return new CopyPromise((resolve, reject) => {
       // 首先需要循环传过来的数组，这里相当于是并发执行的
@@ -479,7 +479,6 @@ class CopyPromise {
             // 		resolve('promse1')
             // 	}))
             // })
-
             // 那就需要继续执行嵌套的promise等待它的结束, 也就是递归的效果
             // then((val) => {
             //   res(index, val)
@@ -498,10 +497,10 @@ class CopyPromise {
         }
         // 走到这里说明resolve()返回了值, 并且这个值不再是promise对象了
         // 此时把val放到对应的索引位置上就可以了
-        args[index] = val
+        result[index] = val
         // 同时注意这里要做减法操作,当remaining=0是说明所有的promise都执行完毕
         if (--remaining === 0) {
-          resolve(args);
+          resolve(result);
         }
       }
     })
@@ -578,7 +577,7 @@ class CopyPromise {
     // 这是外层promise 便于链式调用
     return new CopyPromise(resolve => {
       for (var i = 0, len = arr.length; i < len; i++) {
-        // 依次调用CopyPromise.resolve, 当然也可以手动new CopyPromise，这里因为有之前写好的方法所以直接拿过来用
+        // 依次调用CopyPromise.resolve, 当然也可以手动new CopyPromise，，防止arr[i]不是promise对象
         // 然后关键的是怎么让先执行完的那个promise，执行完后，后面的promise就不会再执行了
         // 例如： [promsie1, promise2, promise3]， 数组里有三项，如果现在promise2先执行完了
         // 此时代码会走到then，看一下then传的参数，是我们外层那个promise的resolve，

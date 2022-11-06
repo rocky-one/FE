@@ -57,4 +57,15 @@ Array.prototype.reduce = function (fn, value) {
 	}
 	return values
 }
+
+Array.prototype.recude = function(fn, value) {
+	let arr = this;
+	let values = typeof value === 'undefined' ? arr[0] : value;
+	let index =  typeof value === 'undefined' ? 1 : 0;
+	for (let i = index; i < arr.length; i++) {
+		values = fn(values, arr[i], i, arr)
+	}
+
+	return values;
+}
 ```

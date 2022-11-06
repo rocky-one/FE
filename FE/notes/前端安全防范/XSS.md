@@ -21,4 +21,4 @@ let html = xss('<h1 id="title">XSS Demo</h1><script>alert("xss");</script>')
 // 这里只把script标签做了转义其他标签不做转义
 ```
 
-3. HttpOnly,无法通过 JavaScript 来读取这段 Cookie
+3. 设置Cookie只读,后端通过设置HttpOnly属性开启只读，无法通过 JavaScript 来读取这段 Cookie

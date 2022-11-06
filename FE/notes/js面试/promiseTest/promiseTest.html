@@ -80,14 +80,15 @@
 		}
 		// 这里我们和 promise-polyfill 保持一致
 		finally = (callback) => {
-			// 为什么要用constructor，resolve是静态方法，我们知道静态方法不能通过this.resolve获取
-			// 一般都是 构造函数名.方法名 的方式获取
-			const constructor = this.constructor
+			return this.then(
+				(value) => CopyPromise.resolve(callback()).then(() => value),
+				(value) => CopyPromise.resolve(callback()).then(() => CopyPromise.reject(value))
+			)
 			return this.then(
 				(value) => {
-					return constructor.resolve(callback()).then(() => value)
+					return CopyPromise.resolve(callback()).then(() => value)
 				}, (value) => {
-					return constructor.resolve(callback()).then(() => constructor.reject(value))
+					return CopyPromise.resolve(callback()).then(() => CopyPromise.reject(value))
 				}
 			)
 		}
@@ -105,7 +106,7 @@
 			// 这是外层promise 便于链式调用
 			return new CopyPromise(resolve => {
 				for (var i = 0, len = arr.length; i < len; i++) {
-					// 依次调用CopyPromise.resolve, 当然也可以手动new CopyPromise，这里因为有之前写好的方法所以直接拿过来用
+					// 依次调用CopyPromise.resolve, 当然也可以手动new CopyPromise，防止arr[i]不是promise对象
 					// 然后关键的是怎么让先执行完的那个promise，执行完后，后面的promise就不会再执行了
 					// 例如： [promsie1, promise2, promise3]， 数组里有三项，如果现在promise2先执行完了
 					// 此时代码会走到then，看一下then传的参数，是我们外层那个promise的resolve，
@@ -177,17 +178,26 @@
 		}, 0)
 	}
 
-	const p1 = new CopyPromise(function (resolve, reject) {
-    setTimeout(resolve, 500, 123);
-});
-p1.then(res => {
-    console.log(res)
-    return res
-})
-p1.then(res => {
-    console.log(res)
-    return res
-}).finally(() => {
-    console.log('finally')
-})
+
+
+	
+	const p1 = new CopyPromise((resolve, reject) => {
+		setTimeout(() => {
+			resolve(1)
+		}, 200)
+	})
+	const p2 = new CopyPromise((resolve, reject) => {
+		setTimeout(() => {
+		resolve(2)
+		}, 300)
+	})
+	const p3 = new CopyPromise((resolve, reject) => {
+		setTimeout(() => {
+		resolve(3)
+		}, 100)
+	})
+	CopyPromise.race([p1, p2, p3]).then(res => {
+		// 打印出3 正确
+		console.log(res)
+	})
 </script>
