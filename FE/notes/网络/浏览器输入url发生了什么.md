@@ -34,10 +34,24 @@
 2. 强缓存：
     * cache-control。值的设置: cache-control: max-age=1000(多少秒后失效); no-cache(需要使用协商缓存); no-store(所有内容都不会缓存，强制缓存，对比缓存都不会触发)
 3. 协商缓存：
-    * last-modified。服务器返回资源的最后修改时间。下一次请求是客户端把在这个最后修改时间放到if-modified-since(请求头)中去。以秒为单位，所以1秒内的修改无法捕捉到。
     * ETag（优先级高于last-modified）。后端去做对比，如果相同说明资源未修改，返回304。
+    * last-modified。服务器返回资源的最后修改时间。下一次请求是客户端把在这个最后修改时间放到if-modified-since(请求头)中去。以秒为单位，所以1秒内的修改无法捕捉到。
     etag能够解决last-modified的一些缺点，但是etag每次服务端生成都需要进行读写操作，而last-modified只需要读取操作，从这方面来看，etag的消耗是更大的。
 
+nginx中配置强缓存,协商缓存需要在代码层实现
+```
+location ~ \.(gif|jpg|jpeg|png|bmp|ico)$ {
+          root /var/www/img/;
+          add_header Cache-Control no-cache;
+    }
+```
+
+```
+// node.js中配置协商缓存
+ctx.set('Cache-Control', 'max-age=300');
+ctx.set('Last-Modified', fileStat.mtime.toGMTString())
+ctx.set(etag: '5c20abbd-e2e8')
+```
 ### 四.浏览器渲染页面
 1. 解析HTML文档，构建DOM Tree。
 2. DOM Tree构建完成后会构建render tree，进入到布局阶段。

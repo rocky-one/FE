@@ -37,7 +37,7 @@ function throllte(fn, delay) {
 
 ### setTimeot模拟setInterval
 ```javascript
-const timerList = new Set()
+
 function setInterval2(cb, ms) {
   const ref = {}
   function run() {
@@ -64,5 +64,6 @@ let ref = setInterval2(() => {
     console.log(ref,'ref')
     clearInterval2(ref)
   }
-}, 1000)
+}, 1000);
+
 ```

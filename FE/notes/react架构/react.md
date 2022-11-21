@@ -3,7 +3,7 @@
 
 ### 受控组件和非受控组件
 1. 受控组件：表单数据由react state管理，我们可以控制state的具体值。
-2. 非受控组建：表单数据由Dom管理，没有state管理，例如input是用户输入，无法控制。
+2. 非受控组件：表单数据由Dom管理，没有state管理，例如input是用户输入，无法控制。
 
 ### 高阶组件
 一个函数接受一个组件作为参数，最终返回一个组件出去。
@@ -16,10 +16,10 @@
 
 
 ### render过程
-1. render
-2. react.createElement生成vdom
-3. diff对比然后构建fiber 
-4. dom渲染
+1. 分为两大阶段render阶段和commit阶段
+2. react.createElement生成vdom，初次渲染根据vdom生成fiber Tree。如果是更新渲染，新的vdom和老的fiber进行对比。
+3. render阶段是构造fiber结构和diff对比的过程，这个过程可以中断。
+4. commit阶段根据render阶段的计算结果进行dom渲染，此过程不可中断。
 
 
 ### React.forwardRef

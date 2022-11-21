@@ -119,9 +119,7 @@ function reject(self, newValue) {
 ok!这样代码就能正常执行了
 
 
-
 ### 第二步then链式调用 ###
-
 
 首先思考一下怎么实现这样的调用 promise.then(), 这个很容易想到只要promsie实例上有then方法就可以这样调用
 那么promise.then().then(), 是不是说明promise.then()执行完后then()方法又返回了一个promise实例,这样就能链式调用了,

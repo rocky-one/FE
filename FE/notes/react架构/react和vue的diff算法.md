@@ -6,7 +6,7 @@
 
 2. 整个diff对比完成最多会进行3次for循环，也可能2次循环就完成。
 
-3. 第一次循环新节点数组newChildren，会有几种不同的情况。
+3. 第一次循环新节点数组newChildren，会有几种不同的情况。这一步主要是处理更新的。
     - newChildren没有遍历完，oldFiber也没有遍历完。1.key发生变化，2. type变化。
     - newChildren遍历完 或者 oldFiber遍历完，或者newChildren和oldFiber都遍历完成。1. 有删除的节点，2. 有新增的节点
 
