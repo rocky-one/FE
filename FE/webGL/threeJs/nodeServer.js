@@ -7,4 +7,4 @@ app.use(cors());
 app.use(static('./'));
 app.listen(8085);
 
-console.log('监听:http://localhost:8085/');
+console.log('监听:http://localhost:8085/', 'http://localhost:8085/three/examples/');
