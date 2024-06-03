@@ -74,6 +74,9 @@ gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(position), gl.STATIC_DRAW)
 ```
 
 其中上面的缓存对象有一点需要注意，就是bindBuffer之后需要直接操作目标target，而不是操作createBuffer()返回的值positionBuffer。同一时间只能绑定一个类型的缓冲对象，当执行了bindBuffer之后缓存对象(positionBuffer)相当于已经绑定到当前context下了，所以这里通过缓存目标类型就知道我们是要操作哪个缓存对象。当往顶点缓冲区传入数据的时候就会自动进入到当前已经绑定的那个缓存对象中去。
+要执行其他buffer，再次bindBuffer
+
+
 
 ### 4. 从缓存中读取数据
 先需要激活属性。

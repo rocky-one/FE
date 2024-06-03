@@ -1,5 +1,8 @@
 ## react
-
+1. class组件和函数组件
+2. 数据驱动UI，单项数据流
+3. 虚拟dom，diff对比
+4. 
 
 ### 受控组件和非受控组件
 1. 受控组件：表单数据由react state管理，我们可以控制state的具体值。
@@ -105,4 +108,7 @@ componentWillUpdate => getSnapshotBeforeUpdate(render前执行)，返回的值�
 
 
 ## useEffect和useLayoutEffect区别
-1. useEffect渲染过程中异步被调用，useLayoutEffect在DOM修改过后同步调用然后渲染。解决闪烁问题
+1. useEffect 是异步执行的，而useLayoutEffect是同步执行的。
+2. useEffect 的执行时机是浏览器完成渲染之后，而 useLayoutEffect 的执行时机是浏览器把内容真正渲染到界面之前，和 componentDidMount 等价。解决闪烁问题
+
+

@@ -106,14 +106,13 @@
         // 获取属性
         let a_position = gl.getAttribLocation(programObject, 'a_position')
         let a_color = gl.getAttribLocation(programObject, 'a_color')
-        let u_matrix = gl.getUniformLocation(programObject, "u_matrix");
-        let reverseLightDirectionLocation = gl.getUniformLocation(programObject, "u_reverseLightDirection");
-        let a_normal = gl.getAttribLocation(programObject, "a_normal");
+        let u_matrix = gl.getUniformLocation(programObject, 'u_matrix');
+        let reverseLightDirectionLocation = gl.getUniformLocation(programObject, 'u_reverseLightDirection');
+        let a_normal = gl.getAttribLocation(programObject, 'a_normal');
         // 创建定点缓冲区
         const vertextBuffer = gl.createBuffer()
         gl.bindBuffer(gl.ARRAY_BUFFER, vertextBuffer)
         gl.bufferData(gl.ARRAY_BUFFER, postionColor, gl.STATIC_DRAW);
-        // setGeometry(gl, 0, 0, 400, 400);
         
         // 创建索引缓冲区
         const indexBuffer = gl.createBuffer()
@@ -149,17 +148,6 @@
             gl.enableVertexAttribArray(a_normal);
             gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
             gl.vertexAttribPointer(a_normal, 3, gl.FLOAT, false, 0, 0)
-
-
-            // 投影转换
-            // var aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-            // var zNear = 1;
-            // var zFar = 2000;
-            // var matrix = m4.perspective(degToRad(80), aspect, zNear, zFar);
-            // matrix = m4.xRotate(matrix, degToRad(30));
-            // matrix = m4.yRotate(matrix, degToRad(40));
-            // matrix = m4.translate(matrix, 330, -260, -360);
-            // gl.uniformMatrix4fv(u_matrix, false, matrix);
 
             // Compute the projection matrix
             let aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
