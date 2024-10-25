@@ -16,4 +16,4 @@ console.log(Function.prototpye.hasOwnProperty('call')) // 打印 true
 
 2. call,bind参数是单个传入，apply是放到数组中传递。
 
-3. call,apply调用后会立即指向函数，bind调用后会返回一个函数，需要再次执行一下。
+3. call,apply调用后会立即执行函数，bind调用后会返回一个函数，需要再次执行一下。
