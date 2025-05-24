@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <canvas id="myCanvas" width="1000" height="1000" style="width:1000px; height:1000px; border:1px solid #000000;" ></canvas>
+  <script>
+    var canvas = document.getElementById('myCanvas');
+    var ctx = canvas.getContext('2d');
+
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'red';
+    ctx.beginPath();
+    ctx.moveTo(100, 100); // 起始点
+    ctx.lineTo(100, 400); // 结束点
+    ctx.stroke();
+  </script>
+</body>
+</html>

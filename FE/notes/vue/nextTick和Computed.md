@@ -1,6 +1,6 @@
 ## nextTick和Computed实现原理 ##
 
-* nextTick本质是还是利用时间循环让代码异步执行。
+* nextTick本质是还是利用事件循环让代码异步执行。
 
 ```javascript
     if(Promise){

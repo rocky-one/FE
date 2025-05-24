@@ -12,6 +12,11 @@ Renderer（渲染器）—— 负责将变化的组件渲染到页面上
 浏览器兼容性
 触发频率不稳定，受很多因素影响。比如当我们的浏览器切换 tab 后，之前 tab 注册的requestIdleCallback触发的频率会变得很低
 
+如何计算还有剩余时间？
+1. 当前任务开始时记录一个时间deadline = performance.now + yieldInterval(5ms)。
+2. 下一次宏任务时计算剩余时间，performance.now > deadline，说明没有剩余时间让出主线程，反之有剩余时间。
+3. 如果有剩余时间，发送port.postMessage(null); 接收消息 执行performWorkUntilDeadline => scheduledHostCallback，执行完当前task后，判断是否还有剩余task，如果有剩余继续发送port.postMessage(null)，这里类似于是一个递归的过程。
+
 
 #### Reconciler（协调器）
 我们知道，在 React15 中Reconciler是递归处理虚拟 DOM 的。让我们看看React16 的 Reconciler。
