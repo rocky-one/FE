@@ -1,0 +1,930 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title></title>
+		<meta charset="utf-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+		/>
+	</head>
+	<style>
+		body,
+		html {
+			margin: 0;
+			padding: 0;
+		}
+		* {
+			margin: 0;
+			padding: 0;
+		}
+		#box {
+			width: 400px;
+			height: 400px;
+			border: 1px solid #f2f2f2;
+			margin: 100px;
+		}
+	</style>
+	<body>
+		<div id="box"></div>
+	</body>
+</html>
+<script type="importmap">
+	{
+		"imports": {
+			"three": "../build/three.module.js",
+			"three/addons/": "./jsm/"
+		}
+	}
+</script>
+<script type="module">
+	import * as THREE from "three";
+	import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+	const boxEle = document.getElementById("box");
+	const width = boxEle.clientWidth;
+	const height = boxEle.clientHeight;
+	const aspect = width / height;
+	const frustumSize = 240;
+	let currentZoom = 1;
+	let camera;
+
+	// 初始化场景、相机和渲染器
+	const scene = new THREE.Scene();
+	scene.background = new THREE.Color(0x222222);
+	// const camera = new THREE.OrthographicCamera(
+	// 	-width / 2,
+	// 	width / 2,
+	// 	height / 2,
+	// 	-height / 2,
+	// 	0.01,
+	// 	1000
+	// );
+	function initCamera() {
+		camera = new THREE.OrthographicCamera(
+				// frustumSize * aspect / -2 * currentZoom,
+				// frustumSize * aspect / 2 * currentZoom,
+				// frustumSize / 2 * currentZoom,
+				// frustumSize / -2 * currentZoom,
+				-width / 2* currentZoom,
+				width / 2* currentZoom,
+				height / 2* currentZoom,
+				-height / 2* currentZoom,
+				0.1,
+				1000
+		);
+		camera.position.set(0, 0, 10);
+		camera.lookAt(0, 0, 0);
+		camera.updateProjectionMatrix(); // 关键：更新投影矩阵
+	};
+	initCamera();
+
+	const renderer = new THREE.WebGLRenderer({ antialias: true });
+	renderer.setSize(width, height);
+	boxEle.appendChild(renderer.domElement);
+
+	// 添加轨道控制器
+	const controls = new OrbitControls(camera, renderer.domElement);
+	camera.position.z = 10;
+	// camera.lookAt(0, 0, 0);
+
+	// 添加光源
+	const ambientLight = new THREE.AmbientLight(0x404040);
+	scene.add(ambientLight);
+	const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+	directionalLight.position.set(1, 1, 1);
+	scene.add(directionalLight);
+
+	// 添加一个3D物体
+	const geometry = new THREE.BoxGeometry(10, 10, 10);
+	const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+	const cube = new THREE.Mesh(geometry, material);
+	scene.add(cube);
+
+	// 存储标注数据
+	const annotations = [];
+
+	const lineMaterial = new THREE.LineBasicMaterial({
+		color: 0xffffff,
+		lineWidth: 2,
+	});
+	const allPoints = [];
+	let lines;
+
+	function getMousePosition(event) {
+		// const rect = renderer.domElement.getBoundingClientRect();
+		// return {
+		// 	x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
+		// 	y: -(((event.clientY - rect.top) / rect.height) * 2 - 1),
+		// };
+
+		const rect = renderer.domElement.getBoundingClientRect();
+		const xPos = event.clientX - rect.left - rect.width / 2;
+		const yPos = -(event.clientY - rect.top - rect.height / 2);
+
+		return {
+			x: xPos,
+			y: yPos,
+		};
+	}
+	function getMouseWorldPosition(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+
+        // 将鼠标屏幕坐标转换为归一化设备坐标 (NDC)
+        const ndcX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        const ndcY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        // 创建一个向量表示鼠标在 NDC 中的位置
+        const mouseNDC = new THREE.Vector3(ndcX, ndcY, 0);
+
+        // 将 NDC 坐标转换为世界坐标
+        mouseNDC.unproject(camera);
+
+        // 计算鼠标在 z=0 平面上的位置
+        const dir = mouseNDC.sub(camera.position).normalize();
+        const distance = -camera.position.z / dir.z; // 假设 z=0 平面
+        const worldPosition = camera.position.clone().add(dir.multiplyScalar(distance));
+
+        return worldPosition;
+    }
+		
+	// 点击事件处理
+  function onMouseMove(event) {
+        const worldPosition = getMouseWorldPosition(event);
+        allPoints.push(worldPosition);
+
+        if (lines) {
+            scene.remove(lines);
+        }
+        const lineGeometry = new THREE.BufferGeometry();
+        lineGeometry.setFromPoints(allPoints);
+
+        lines = new THREE.Line(lineGeometry, lineMaterial);
+        scene.add(lines);
+    }
+
+	// 窗口大小调整
+	function onWindowResize() {
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+		renderer.setSize(window.innerWidth, window.innerHeight);
+	}
+
+	// 动画循环
+	function animate() {
+		requestAnimationFrame(animate);
+
+		controls.update();
+		renderer.render(scene, camera);
+	}
+
+	// 添加事件监听 mousemove
+	window.addEventListener("mousemove", onMouseMove, false);
+	window.addEventListener("resize", onWindowResize, false);
+	window.addEventListener("mousedown", () => {
+		// currentZoom = camera.zoom;
+		// initCamera();
+	})
+
+	// 开始动画
+	animate();
+</script> -->
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Three.js 抗缩放场景绘制</title>
+		<!-- <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script> -->
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+				font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+			}
+
+			body {
+				background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+				color: #fff;
+				min-height: 100vh;
+				overflow: hidden;
+			}
+
+			.header {
+				text-align: center;
+				padding: 20px;
+				background: rgba(0, 0, 0, 0.4);
+				box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+			}
+
+			h1 {
+				font-size: 2.8rem;
+				margin-bottom: 10px;
+				background: linear-gradient(to right, #ff7e5f, #feb47b);
+				-webkit-background-clip: text;
+				-webkit-text-fill-color: transparent;
+				text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+			}
+
+			.subtitle {
+				font-size: 1.2rem;
+				color: #aaccff;
+				max-width: 800px;
+				margin: 0 auto;
+				line-height: 1.6;
+			}
+
+			.container {
+				display: flex;
+				padding: 20px;
+				gap: 20px;
+				max-width: 1600px;
+				margin: 0 auto;
+			}
+
+			#scene-container {
+				flex: 1;
+				height: 70vh;
+				background: rgba(0, 0, 0, 0.2);
+				border-radius: 15px;
+				overflow: hidden;
+				box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+				position: relative;
+				border: 1px solid rgba(100, 100, 200, 0.3);
+			}
+
+			#info-panel {
+				position: absolute;
+				bottom: 20px;
+				left: 20px;
+				background: rgba(0, 0, 0, 0.7);
+				padding: 15px;
+				border-radius: 10px;
+				font-size: 0.9rem;
+				max-width: 300px;
+				line-height: 1.6;
+				border: 1px solid rgba(255, 126, 95, 0.3);
+			}
+
+			#info-panel h3 {
+				color: #ff7e5f;
+				margin-bottom: 10px;
+				text-align: center;
+			}
+
+			.controls {
+				width: 320px;
+				display: flex;
+				flex-direction: column;
+				gap: 20px;
+				max-height: 1200px;
+				overflow-y: auto;
+			}
+
+			.control-card {
+				background: rgba(30, 30, 50, 0.85);
+				border-radius: 15px;
+				padding: 20px;
+				box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+				border: 1px solid rgba(100, 100, 200, 0.3);
+			}
+
+			.control-card h2 {
+				color: #feb47b;
+				font-size: 1.4rem;
+				margin-bottom: 20px;
+				padding-bottom: 10px;
+				border-bottom: 2px solid #ff7e5f;
+				text-align: center;
+			}
+
+			.control-group {
+				margin-bottom: 20px;
+			}
+
+			label {
+				display: block;
+				margin-bottom: 8px;
+				color: #aaccff;
+				font-weight: 500;
+			}
+
+			input[type="range"] {
+				width: 100%;
+				height: 8px;
+				background: linear-gradient(to right, #1a2a6c, #b21f1f);
+				border-radius: 4px;
+				outline: none;
+				-webkit-appearance: none;
+			}
+
+			input[type="range"]::-webkit-slider-thumb {
+				-webkit-appearance: none;
+				width: 20px;
+				height: 20px;
+				background: #ff7e5f;
+				border-radius: 50%;
+				cursor: pointer;
+				box-shadow: 0 0 10px rgba(255, 126, 95, 0.7);
+			}
+
+			button {
+				background: linear-gradient(to right, #ff7e5f, #feb47b);
+				color: white;
+				border: none;
+				padding: 12px 20px;
+				border-radius: 8px;
+				cursor: pointer;
+				font-weight: bold;
+				transition: all 0.3s;
+				width: 100%;
+				margin: 8px 0;
+				font-size: 1rem;
+				letter-spacing: 0.5px;
+			}
+
+			button:hover {
+				transform: translateY(-3px);
+				box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
+			}
+
+			button:active {
+				transform: translateY(1px);
+			}
+
+			.value-display {
+				background: rgba(0, 0, 0, 0.3);
+				padding: 10px;
+				border-radius: 8px;
+				text-align: center;
+				font-size: 1.2rem;
+				font-weight: bold;
+				color: #feb47b;
+				border: 1px solid rgba(255, 126, 95, 0.5);
+				margin: 15px 0;
+			}
+
+			.color-selector {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+				justify-content: center;
+				margin-top: 10px;
+			}
+
+			.color-option {
+				width: 35px;
+				height: 35px;
+				border-radius: 50%;
+				cursor: pointer;
+				border: 2px solid transparent;
+				transition: all 0.2s;
+			}
+
+			.color-option:hover {
+				transform: scale(1.1);
+			}
+
+			.color-option.active {
+				border-color: white;
+				box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+			}
+
+			.status-indicator {
+				display: inline-block;
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				margin-right: 8px;
+			}
+
+			.drawing-active {
+				background-color: #4caf50;
+				box-shadow: 0 0 10px rgba(76, 175, 80, 0.7);
+			}
+
+			.drawing-inactive {
+				background-color: #f44336;
+			}
+
+			.instructions {
+				line-height: 1.6;
+				color: #ccd6f6;
+			}
+
+			.instructions ul {
+				padding-left: 20px;
+				margin: 15px 0;
+			}
+
+			.instructions li {
+				margin-bottom: 10px;
+			}
+
+			.instructions code {
+				background: rgba(0, 0, 0, 0.4);
+				padding: 2px 6px;
+				border-radius: 4px;
+				color: #ff7e5f;
+			}
+
+			.footer {
+				text-align: center;
+				padding: 20px;
+				color: #aaccff;
+				font-size: 0.9rem;
+			}
+
+			@media (max-width: 1100px) {
+				.container {
+					flex-direction: column;
+				}
+
+				.controls {
+					width: 100%;
+					flex-direction: row;
+					flex-wrap: wrap;
+				}
+
+				.control-card {
+					flex: 1;
+					min-width: 300px;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div class="header">
+			<h1>Three.js 抗缩放场景绘制</h1>
+			<p class="subtitle">
+				在3D场景中自由绘制，即使放大立方体后线条也不会错位 -
+				完美解决缩放偏移问题
+			</p>
+		</div>
+
+		<div class="container">
+			<div id="scene-container"></div>
+
+			<div class="controls">
+				<div class="control-card">
+					<h2>场景控制</h2>
+
+					<div class="control-group">
+						<label>立方体缩放: <span id="cube-scale-value">1.0</span></label>
+						<input
+							type="range"
+							id="cube-scale"
+							min="0.5"
+							max="3"
+							step="0.1"
+							value="1"
+						/>
+					</div>
+
+					<div class="control-group">
+						<label
+							>立方体旋转速度:
+							<span id="rotation-speed-value">0.01</span></label
+						>
+						<input
+							type="range"
+							id="rotation-speed"
+							min="0"
+							max="0.05"
+							step="0.005"
+							value="0.01"
+						/>
+					</div>
+
+					<div class="value-display">
+						相机缩放: <span id="zoom-value">1.00</span>
+					</div>
+
+					<button id="zoom-in">放大场景</button>
+					<button id="zoom-out">缩小场景</button>
+					<button id="reset-view">重置视图</button>
+				</div>
+
+				<div class="control-card">
+					<h2>画笔设置</h2>
+
+					<div class="control-group">
+						<label>画笔大小: <span id="brush-size-value">0.1</span></label>
+						<input
+							type="range"
+							id="brush-size"
+							min="0.05"
+							max="0.5"
+							step="0.01"
+							value="0.1"
+						/>
+					</div>
+
+					<div class="control-group">
+						<label>画笔颜色</label>
+						<div class="color-selector">
+							<div
+								class="color-option active"
+								style="background-color: #ff0000"
+								data-color="0xff0000"
+							></div>
+							<div
+								class="color-option"
+								style="background-color: #00ff00"
+								data-color="0x00ff00"
+							></div>
+							<div
+								class="color-option"
+								style="background-color: #0000ff"
+								data-color="0x0000ff"
+							></div>
+							<div
+								class="color-option"
+								style="background-color: #ffff00"
+								data-color="0xffff00"
+							></div>
+							<div
+								class="color-option"
+								style="background-color: #ff00ff"
+								data-color="0xff00ff"
+							></div>
+							<div
+								class="color-option"
+								style="background-color: #00ffff"
+								data-color="0x00ffff"
+							></div>
+						</div>
+					</div>
+
+					<div class="value-display">
+						<span
+							class="status-indicator drawing-inactive"
+							id="drawing-status-indicator"
+						></span>
+						绘制状态: <span id="drawing-status">未激活</span>
+					</div>
+
+					<button id="toggle-drawing">激活绘制模式</button>
+					<button id="clear-drawing">清除所有绘制</button>
+				</div>
+
+				<div class="control-card">
+					<h2>使用说明</h2>
+					<div class="instructions">
+						<p>这个演示展示了在Three.js中实现抗缩放绘制的解决方案：</p>
+						<ul>
+							<li>
+								<strong>激活绘制模式</strong>后在场景中点击并拖动鼠标进行绘制
+							</li>
+							<li>
+								随意<strong>缩放场景和立方体</strong> - 绘制线条会保持位置不变
+							</li>
+							<li>
+								解决方案的核心是正确处理<code>camera.zoom</code>和<code
+									>updateProjectionMatrix()</code
+								>
+							</li>
+							<li>使用<strong>射线投射(raycaster)</strong>计算正确的3D位置</li>
+							<li>在缩放后<strong>更新投影矩阵</strong>确保坐标映射正确</li>
+						</ul>
+						<p>
+							技术要点：通过正确的坐标转换和投影矩阵更新，解决了场景缩放后画笔位置偏移的问题。
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="footer">
+			<p>
+				Three.js 抗缩放场景绘制解决方案 | 使用正交投影相机确保绘制位置准确性
+			</p>
+		</div>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "../build/three.module.js",
+					"three/addons/": "./jsm/"
+				}
+			}
+		</script>
+		<script type="module">
+				import * as THREE from "three";
+			// 初始化变量
+			let scene, camera, renderer, cube;
+			let raycaster, mouse;
+			let isDrawing = false;
+			let currentLine = null;
+			let brushPoints = [];
+			let brushColor = 0xff0000;
+			let brushSize = 0.1;
+			let cubeScale = 1.0;
+			let rotationSpeed = 0.01;
+
+			// 初始化Three.js场景
+			function init() {
+				// 创建场景
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color(0x1a1a2e);
+
+				// 创建相机（正交投影）
+				const aspect =
+					document.getElementById("scene-container").clientWidth /
+					document.getElementById("scene-container").clientHeight;
+				const frustumSize = 15;
+				camera = new THREE.OrthographicCamera(
+					(frustumSize * aspect) / -2,
+					(frustumSize * aspect) / 2,
+					frustumSize / 2,
+					frustumSize / -2,
+					0.1,
+					1000
+				);
+				camera.position.set(5, 5, 10);
+				camera.lookAt(0, 0, 0);
+
+				// 创建渲染器
+				renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+				renderer.setSize(
+					document.getElementById("scene-container").clientWidth,
+					document.getElementById("scene-container").clientHeight
+				);
+				renderer.setPixelRatio(window.devicePixelRatio);
+				document
+					.getElementById("scene-container")
+					.appendChild(renderer.domElement);
+
+				// 添加光源
+				const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+				scene.add(ambientLight);
+
+				const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+				directionalLight.position.set(5, 5, 5);
+				scene.add(directionalLight);
+
+				// 添加网格地面
+				// const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+				// scene.add(gridHelper);
+
+				// 添加坐标轴
+				const axesHelper = new THREE.AxesHelper(5);
+				scene.add(axesHelper);
+
+				// 创建立方体
+				const geometry = new THREE.BoxGeometry(2, 2, 2);
+				const material = new THREE.MeshPhongMaterial({
+					color: 0x1e90ff,
+					wireframe: false,
+					transparent: true,
+					opacity: 0.9,
+				});
+				cube = new THREE.Mesh(geometry, material);
+				scene.add(cube);
+
+				// 添加立方体线框
+				const wireframe = new THREE.WireframeGeometry(geometry);
+				const lineMaterial = new THREE.LineBasicMaterial({
+					color: 0xffffff,
+					linewidth: 1,
+					transparent: true,
+					opacity: 0.7,
+				});
+				const wireframeMesh = new THREE.LineSegments(wireframe, lineMaterial);
+				cube.add(wireframeMesh);
+
+				// 初始化鼠标和射线投射器
+				mouse = new THREE.Vector2();
+				raycaster = new THREE.Raycaster();
+
+				// 添加事件监听器
+				setupEventListeners();
+
+				// 开始动画循环
+				animate();
+			}
+
+			// 设置事件监听器
+			function setupEventListeners() {
+				// 鼠标事件
+				renderer.domElement.addEventListener("mousedown", onMouseDown);
+				renderer.domElement.addEventListener("mousemove", onMouseMove);
+				renderer.domElement.addEventListener("mouseup", onMouseUp);
+
+				// 控制面板事件
+				document
+					.getElementById("cube-scale")
+					.addEventListener("input", function () {
+						cubeScale = parseFloat(this.value);
+						document.getElementById("cube-scale-value").textContent =
+							cubeScale.toFixed(1);
+						cube.scale.set(cubeScale, cubeScale, cubeScale);
+					});
+
+				document
+					.getElementById("rotation-speed")
+					.addEventListener("input", function () {
+						rotationSpeed = parseFloat(this.value);
+						document.getElementById("rotation-speed-value").textContent =
+							rotationSpeed.toFixed(3);
+					});
+
+				document
+					.getElementById("brush-size")
+					.addEventListener("input", function () {
+						brushSize = parseFloat(this.value);
+						document.getElementById("brush-size-value").textContent =
+							brushSize.toFixed(2);
+					});
+
+				document
+					.getElementById("zoom-in")
+					.addEventListener("click", function () {
+						camera.zoom *= 1.2;
+						updateCamera();
+					});
+
+				document
+					.getElementById("zoom-out")
+					.addEventListener("click", function () {
+						camera.zoom *= 0.8;
+						updateCamera();
+					});
+
+				document
+					.getElementById("reset-view")
+					.addEventListener("click", function () {
+						camera.zoom = 1;
+						cube.rotation.set(0, 0, 0);
+						cubeScale = 1.0;
+						document.getElementById("cube-scale").value = 1.0;
+						document.getElementById("cube-scale-value").textContent = "1.0";
+						cube.scale.set(1, 1, 1);
+						updateCamera();
+					});
+
+				document
+					.getElementById("toggle-drawing")
+					.addEventListener("click", function () {
+						isDrawing = !isDrawing;
+						updateDrawingStatus();
+					});
+
+				document
+					.getElementById("clear-drawing")
+					.addEventListener("click", function () {
+						clearDrawing();
+					});
+
+				// 颜色选择
+				document.querySelectorAll(".color-option").forEach((option) => {
+					option.addEventListener("click", function () {
+						brushColor = parseInt(this.dataset.color);
+						document.querySelectorAll(".color-option").forEach((opt) => {
+							opt.classList.remove("active");
+						});
+						this.classList.add("active");
+					});
+				});
+
+				// 窗口大小调整
+				window.addEventListener("resize", onWindowResize);
+			}
+
+			// 更新相机
+			function updateCamera() {
+				camera.updateProjectionMatrix();
+				document.getElementById("zoom-value").textContent =
+					camera.zoom.toFixed(2);
+			}
+
+			// 更新绘制状态
+			function updateDrawingStatus() {
+				const statusIndicator = document.getElementById(
+					"drawing-status-indicator"
+				);
+				const statusText = document.getElementById("drawing-status");
+				const button = document.getElementById("toggle-drawing");
+
+				if (isDrawing) {
+					statusIndicator.className = "status-indicator drawing-active";
+					statusText.textContent = "已激活";
+					button.textContent = "停用绘制模式";
+					button.style.background =
+						"linear-gradient(to right, #f85032, #e73827)";
+				} else {
+					statusIndicator.className = "status-indicator drawing-inactive";
+					statusText.textContent = "未激活";
+					button.textContent = "激活绘制模式";
+					button.style.background =
+						"linear-gradient(to right, #ff7e5f, #feb47b)";
+				}
+			}
+
+			// 清除绘制
+			function clearDrawing() {
+				scene.children.forEach((child) => {
+					if (child.userData && child.userData.isDrawing) {
+						scene.remove(child);
+					}
+				});
+			}
+
+			// 鼠标按下事件
+			function onMouseDown(event) {
+				if (!isDrawing) return;
+
+				// 计算鼠标位置
+				const rect = renderer.domElement.getBoundingClientRect();
+				mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+				mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+				// 设置射线投射器
+				raycaster.setFromCamera(mouse, camera);
+
+				// 创建新的线条
+				const lineGeometry = new THREE.BufferGeometry();
+				const lineMaterial = new THREE.LineBasicMaterial({
+					color: brushColor,
+					linewidth: 2,
+				});
+
+				currentLine = new THREE.Line(lineGeometry, lineMaterial);
+				currentLine.userData = { isDrawing: true };
+				scene.add(currentLine);
+				brushPoints = [];
+			}
+
+			// 鼠标移动事件
+			function onMouseMove(event) {
+				if (!isDrawing || !currentLine) return;
+
+				// 计算鼠标位置
+				const rect = renderer.domElement.getBoundingClientRect();
+				mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+				mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+				// 设置射线投射器
+				raycaster.setFromCamera(mouse, camera);
+
+				// 计算射线与平面（z=0）的交点
+				const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+				const intersection = new THREE.Vector3();
+				raycaster.ray.intersectPlane(plane, intersection);
+
+				// 添加点到当前线条
+				brushPoints.push(intersection.clone());
+
+				// 更新线条几何体
+				const positions = [];
+				brushPoints.forEach((point) => {
+					positions.push(point.x, point.y, point.z);
+				});
+
+				currentLine.geometry.setAttribute(
+					"position",
+					new THREE.Float32BufferAttribute(positions, 3)
+				);
+			}
+
+			// 鼠标释放事件
+			function onMouseUp() {
+				if (currentLine) {
+					currentLine = null;
+					brushPoints = [];
+				}
+			}
+
+			// 窗口大小调整
+			function onWindowResize() {
+				const container = document.getElementById("scene-container");
+				const aspect = container.clientWidth / container.clientHeight;
+
+				// 更新相机
+				camera.left = ((-frustumSize * aspect) / 2) * camera.zoom;
+				camera.right = ((frustumSize * aspect) / 2) * camera.zoom;
+				camera.top = (frustumSize / 2) * camera.zoom;
+				camera.bottom = (-frustumSize / 2) * camera.zoom;
+				camera.updateProjectionMatrix();
+
+				// 更新渲染器
+				renderer.setSize(container.clientWidth, container.clientHeight);
+			}
+
+			// 动画循环
+			function animate() {
+				requestAnimationFrame(animate);
+
+				// 旋转立方体
+				cube.rotation.x += rotationSpeed;
+				cube.rotation.y += rotationSpeed * 1.5;
+
+				renderer.render(scene, camera);
+			}
+
+			// 初始化应用
+			init();
+			updateDrawingStatus();
+		</script>
+	</body>
+</html>

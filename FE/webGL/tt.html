@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ECharts图例文字超长处理与Tooltip实现</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      }
+      body {
+        min-height: 100vh;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .container {
+        max-width: 1200px;
+        width: 100%;
+        padding: 20px;
+      }
+      .chart-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 30px;
+        margin-bottom: 40px;
+      }
+      .chart-wrapper {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        padding: 25px;
+        flex: 1;
+        min-width: 300px;
+        transition: transform 0.3s ease;
+      }
+      
+      .chart {
+        width: 100%;
+        height: 400px;
+      }
+     
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="chart-container">
+        <div class="chart-wrapper">
+          <h2 class="chart-title">文本截断 + Tooltip提示</h2>
+          <div id="chart1" class="chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 初始化图表
+      const chart1 = echarts.init(document.getElementById("chart1"));
+
+      // 配置项
+      let maxLength = 10;
+      let ellipsisPosition = "end";
+      let tooltipDelay = 300;
+      let legendPosition = "top";
+
+      // 生成示例数据
+      const longNames = [
+        "全球智能手机市场销售数据分析",
+        "企业级云存储解决方案年度报告",
+        "新能源汽车充电基础设施分布情况",
+        "人工智能在医疗诊断中的应用进展",
+        "全球气候变化对农业的影响研究",
+        "金融科技在普惠金融中的创新实践",
+      ];
+
+      // 生成随机数据
+      function generateData() {
+        return longNames.map((name, index) => {
+          return {
+            name: name,
+            value: Math.floor(Math.random() * 1000) + 500,
+          };
+        });
+      }
+
+      // 文本截断函数
+      function truncateText(text, maxLen, position = "end") {
+        if (text.length <= maxLen) return text;
+
+        if (position === "end") {
+          return text.substring(0, maxLen - 1) + "…";
+        } else {
+          const partLen = Math.floor((maxLen - 3) / 2);
+          return (
+            text.substring(0, partLen) +
+            "…" +
+            text.substring(text.length - partLen)
+          );
+        }
+      }
+
+      // 更新图表函数
+      function updateCharts() {
+        const data = generateData();
+
+        // 图表1配置：文本截断 + Tooltip
+        const option1 = {
+          tooltip: {
+            trigger: "item",
+            // formatter: '{b}: {c}'
+          },
+          legend: {
+            type: "scroll",
+            orient: "horizontal",
+            data: data.map((item) => ({
+              name: item.name,
+              icon: "rect",
+            })),
+            formatter: (name) =>
+              truncateText(name, maxLength, ellipsisPosition),
+            tooltip: {
+              show: true,
+              formatter: (params) => params.name,
+            },
+          },
+          series: [
+            {
+              name: "数据展示",
+              type: "pie",
+              radius: ["40%", "70%"],
+              center: ["50%", "50%"],
+              data: data,
+              label: {
+                formatter: "{b|{b}}\n{per|{d}%}",
+                rich: {
+                  b: {
+                    fontSize: 14,
+                    lineHeight: 20,
+                  },
+                  per: {
+                    color: "#999",
+                    fontSize: 12,
+                  },
+                },
+              },
+            },
+          ],
+        };
+
+        chart1.setOption(option1);
+      }
+
+      // 初始化
+      updateCharts();
+    </script>
+  </body>
+</html>
